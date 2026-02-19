@@ -1,0 +1,41 @@
+{% load tailwind_tags %}
+<!doctype html>
+<html lang="en">
+  <head>
+    {% tailwind_css %}
+      <title>DIY Projects</title>
+  </head>
+{# The base to appear on every page!!! #}
+  <body class="bg-gray-100 min-h-screen flex flex-col">
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-row items-center justify-between">
+            <a href="/" class="text-2xl font-bold text-black mb-4">DIY 4 U (or something else tacky)</a>
+            
+            <form method="GET" action="{% url 'search_results' %}" class="flex items-center gap-2">
+                <label for="search" class="text-md font-medium text-black">Search</label>
+                <div class="relative">
+                    <input
+                        type="search"
+                        name="search"
+                        id="search"
+                        value="{{ query }}"
+                        class="block w-full p-2 text-black text-sm border border-gray-300 bg-white"
+                        placeholder="Search DIY projects..."
+                    />
+                </div>
+                <button
+                    type="submit"
+                    class="text-white bg-blue-700 font-medium text-sm px-4 py-2"
+                >
+                    Search
+                </button>
+            </form>
+        </div>
+    </header>
+
+
+    <main class="flex-grow p-4">
+    {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

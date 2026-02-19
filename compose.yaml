@@ -1,0 +1,52 @@
+# Comments are provided throughout this file to help you get started.
+# If you need more help, visit the Docker Compose reference guide at
+# https://docs.docker.com/go/compose-spec-reference/
+
+# Here the instructions define your application as a service called "app".
+# This service is built from the Dockerfile in the current directory.
+# You can add other services your application may depend on here, such as a
+# database or a cache. For examples, see the Awesome Compose repository:
+# https://github.com/docker/awesome-compose
+
+services:
+  app:
+    build: 
+      context: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+     - .env
+    volumes:
+      - .:/app
+
+#allows for tailwind implementation
+  tailwind:
+    image: node:20
+    working_dir: /app/app/theme/static_src
+    volumes:
+      - .:/app
+    # installs deps in the container, then starts watcher
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - app
+
+
+  db:
+      image: postgres:15
+      environment: 
+        POSTGRES_DB: ${DATABASE_NAME}
+        POSTGRES_USER: ${DATABASE_USERNAME}
+        POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      env_file:
+       - .env
+      ports: 
+        - "5432:5432"
+      volumes:
+        - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+
+
