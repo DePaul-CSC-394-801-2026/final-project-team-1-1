@@ -8,11 +8,12 @@ Matthew
 Hamza
 
 
-## Seeding the database, to test out search w.i.p.
-- Probably need to delete everything first
-- `docker compose down -v`
-- Migrate
-- `docker compose up -d`
-- `docker compose exec app python app/manage.py makemigrations pages`
-- `docker compose exec app python app/manage.py migrate`
-- Then seed: `docker compose exec app python app/manage.py seed_projects`
+## Rest the environment for these new models
+- docker compose down -v
+- docker compose up -d --build
+- docker compose exec app python app/manage.py makemigrations pages
+- docker compose exec app python app/manage.py migrate
+
+## Create admin access - to access the backend and add data manually, create superuser
+- docker compose exec app python app/manage.py createsuperuser
+- navigate to http://localhost:8000/admin/
