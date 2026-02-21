@@ -46,19 +46,19 @@ class Asset(models.Model):
 # The task id is a uuid that is automatically generated on creation
 # The task is matched to the particular asset, when the asset is deleted, the task is deleted
 # The task can also be tied to a room, when the room is deleted, the task is deleted
-# The interval has a help_text to specify the format
-# Might need to remove the complete
+# TODO the interval will need to be adjusted when we figure out how to incorporate it
+# Might need to remove the completed
 class Task(models.Model):
     task_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=64)
     interval = models.CharField(max_length=64, blank=True)
-    completed = models.BooleanField(default=False)
+    #completed = models.BooleanField(default=False)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
 
     def __str__(self):
         location = self.asset.name if self.asset else self.room.name if self.room else "general"
-        return f"{self.name} ({location}) - {'done' if self.completed else 'pending'}"
+        return f"{self.name} ({location})"
 
 # The consumable id is a uuid that is automatically generated on creation
 # The consumable is matched to the particular task, when the task is deleted, the consumable is deleted

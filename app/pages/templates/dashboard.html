@@ -1,7 +1,215 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="max-w-3xl mx-auto">
-  <h1 class="text-2xl text-black mb-2">Dashboard</h1>
-  <p class="text-black">Welcome, {{ request.session.username }}.</p>
+<div class="max-w-5xl mx-auto space-y-5">
+  <header class="border-b pb-4">
+    <h1 class="text-2xl">Dashboard</h1>
+    <p class="text-md">Heyyyyyyyyyy, {{ request.session.username }}.</p>
+  </header>
+
+    {#Global stats#}
+  <section class="grid grid-cols-3 gap-4">
+    <div class="border rounded p-3 bg-black text-white">
+      <p class="text-xs uppercase text-gray-300">Rooms</p>
+      <p class="text-3xl font-bold">{{ rooms.count }}</p>
+      <p class="text-sm text-gray-300">total</p>
+    </div>
+    <div class="border rounded p-3 bg-black">
+      <p class="text-xs uppercase text-gray-300">Assets</p>
+      <p class="text-3xl font-bold">{{ assets.count }}</p>
+      <p class="text-sm text-gray-600">in view</p>
+    </div>
+    <div class="border rounded p-3 bg-black">
+      <p class="text-xs uppercase text-gray-300">Tasks</p>
+      <p class="text-3xl font-bold">{{ tasks.count }}</p>
+      <p class="text-sm text-gray-600">linked to these rooms</p>
+    </div>
+  </section>
+
+    {#Room n assets overview#}
+  <section class="grid gap-4 grid-cols-2">
+    <div class="border rounded bg-black p-4">
+      <p class="text-md mb-2">Room list</p>
+      {% if rooms %}
+        <ul class="space-y-1 text-sm">
+          {% for room in rooms %}
+            {#fyi, justify between within container puts them on separate ends#}
+            <li class="flex justify-between">
+              <span>{{ room.name }}</span>
+              <span class="text-xs">{{ room.assets.count }} assets</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-xs">No rooms yet.</p>
+      {% endif %}
+    </div>
+    <div class="border rounded bg-black p-4">
+      <p class="text-md mb-2">Assets</p>
+      {% if assets %}
+        <ul class="space-y-1 text-sm">
+          {% for asset in assets %}
+            {#last makes sure that the last item does not get the styling#}
+            <li class="border-zinc-400 border-b pb-2 last:border-none">
+              <div class="font-medium">{{ asset.name }}</div>
+              <div class="text-xs text-gray-300">
+                {% if asset.brand %}
+                  {{ asset.brand }}
+                {% else %}
+                  Unknown
+                {% endif %}
+                -
+                {% if asset.category %}
+                  {{ asset.category }}
+                {% else %}
+                  General
+                {% endif %}
+              </div>
+              <div class="text-xs">Room: {{ asset.room.name }}</div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-xs ">Select or create a room to see assets.</p>
+      {% endif %}
+    </div>
+  </section>
+
+    {#Tasks and due soon section#}
+  <section class="grid gap-4 grid-cols-2">
+    <div class="border rounded bg-black p-4">
+      <p class="text-sm mb-2">Tasks</p>
+      {% if tasks %}
+        <ul class="space-y-2 text-sm">
+          {% for task in tasks %}
+            <li class="border-b pb-2 last:border-none">
+              <div class="font-medium">{{ task.name }}</div>
+              <div class="text-xs text-gray-300">Location: {% if task.asset %}{{ task.asset.name }}{% elif task.room %}{{ task.room.name }}{% else %}General{% endif %}</div>
+              <div class="text-xs text-gray-300">
+                Interval: {% if task.interval %}{{ task.interval }}{% else %}Not set{% endif %}
+              </div>
+              <div class="text-xs text-gray-300">Status: TODO....</div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-xs text-gray-300">Add a task to track maintenance or chores.</p>
+      {% endif %}
+    </div>
+    <div class="border rounded bg-black p-4">
+      <p class="text-sm  mb-2">Due soon</p>
+      {% if upcoming_tasks %}
+        <ul class="space-y-2 text-sm">
+          {% for task in upcoming_tasks %}
+            <li class="border-b pb-2 last:border-none">
+              <div class="font-medium">{{ task.name }}</div>
+              <div class="text-xs text-gray-300">Assigned: {% if task.asset %}{{ task.asset.name }}{% elif task.room %}{{ task.room.name }}{% else %}General{% endif %}</div>
+              <div class="text-xs text-gray-300">
+                Next due: {% if task.interval %}{{ task.interval }}{% else %}TBD{% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-xs text-gray-300">Tasks become due after they are added here.</p>
+      {% endif %}
+    </div>
+  </section>
+
+    {#Activity log secton. Takes up full width when max not specified#}
+  <section class="border rounded bg-black p-4">
+    <p class="text-sm mb-2">Activity log</p>
+    {% if logs %}
+      <ul class="space-y-2 text-sm">
+        {% for log in logs %}
+          <li class="border-b pb-2 last:border-none">
+            <div class="font-medium">{{ log.task.name }}</div>
+            <div class="text-xs text-gray-300">
+              Completed: {% if log.completion_date %}{{ log.completion_date }}{% else %}Pending{% endif %}
+            </div>
+            <div class="text-xs text-gray-300">
+              Cost: {% if log.cost %}{{ log.cost }}{% else %}—{% endif %}
+            </div>
+            <div class="text-xs text-gray-300">
+              Notes: {% if log.notes %}{{ log.notes }}{% else %}No notes{% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-xs text-gray-300">Logs show task history once recorded</p>
+    {% endif %}
+  </section>
+
+  {#Add room  & asset section#}
+  <section class="grid gap-4 md:grid-cols-2">
+    <form method="post" class="border rounded bg-black p-4 space-y-2">
+      {% csrf_token %}
+        {#These inputs tell our backend what actions to perform and which room view to return after submission#}
+      <input type="hidden" name="action" value="add-room">
+      <input type="hidden" name="return_room" value="{{ selected_room_id }}">
+      <p class="text-sm ">Add room</p>
+      <input name="room_name" placeholder="Room name" class="w-full border px-2 py-1" required>
+      <textarea name="room_description" placeholder="Description" class="w-full border px-2 py-1" rows="2"></textarea>
+      <button type="submit" class="border px-3 py-1">Save</button>
+    </form>
+    <form method="post" class="border rounded bg-black p-4 space-y-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add-asset">
+      <input type="hidden" name="return_room" value="{{ selected_room_id }}">
+      <p class="text-sm ">Add asset</p>
+        {#Again, these inputs tell our backend what actions to perform and which room view to return after submission#}
+      <input name="asset_name" placeholder="Asset name" class="w-full border px-2 py-1" required>
+      <input name="asset_brand" placeholder="Brand" class="w-full border px-2 py-1">
+      <input name="asset_category" placeholder="Category" class="w-full border px-2 py-1">
+      <select name="asset_room" class="w-full border px-2 py-1">
+        <option value="">default?</option>
+        {% for room in rooms %}
+          <option value="{{ room.room_id }}">{{ room.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="border px-3 py-1">Save</button>
+    </form>
+  </section>
+
+    {#Add task & log section. It is basically just a copy paste of the asset but for logs and tasks#}
+  <section class="grid gap-4 md:grid-cols-2">
+    <form method="post" class="border rounded bg-black p-4 space-y-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add-task">
+      <input type="hidden" name="return_room" value="{{ selected_room_id }}">
+      <p class="text-sm ">Add task</p>
+      <input name="task_name" placeholder="Task name" class="w-full border px-2 py-1" required>
+      <input name="task_interval" placeholder="Interval (weekly, daily, etc.)" class="w-full border px-2 py-1">
+      <select name="task_room" class="w-full border px-2 py-1">
+        <option value="">Room (optional)</option>
+        {% for room in rooms %}
+          <option value="{{ room.room_id }}">{{ room.name }}</option>
+        {% endfor %}
+      </select>
+      <select name="task_asset" class="w-full border px-2 py-1">
+        <option value="">Asset (optional)</option>
+        {% for asset in asset_choices %}
+          <option value="{{ asset.asset_id }}">{{ asset.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="border px-3 py-1">Save</button>
+    </form>
+    <form method="post" class="border rounded bg-black p-4 space-y-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add-log">
+      <input type="hidden" name="return_room" value="{{ selected_room_id }}">
+      <p class="text-sm ">Add log</p>
+      <select name="log_task" class="w-full border px-2 py-1" required>
+        <option value="">Choose task</option>
+        {% for task in task_choices %}
+          <option value="{{ task.task_id }}">{{ task.name }}</option>
+        {% endfor %}
+      </select>
+      <input type="date" name="log_completion_date" class="w-full border px-2 py-1">
+      <input name="log_cost" placeholder="Cost" class="w-full border px-2 py-1">
+      <textarea name="log_notes" placeholder="Notes" class="w-full border px-2 py-1" rows="2"></textarea>
+      <button type="submit" class="border px-3 py-1">Save</button>
+    </form>
+  </section>
 </div>
 {% endblock %}
