@@ -6,16 +6,16 @@
     {% csrf_token %}
     <div class="mb-3">
       <label class="block text-black mb-1" for="username">Username</label>
-      <input class="w-full border border-gray-400 px-2 py-1 text-black" id="username" name="username" type="text" minlength="5" maxlength="20" required />
+      <input class="w-full border border-gray-500 bg-gray-800 px-2 py-1 " id="username" name="username" type="text" minlength="5" maxlength="20" required />
       <p class="text-sm text-black mt-1">5 to 20 characters.</p>
     </div>
     <div class="mb-3">
       <label class="block text-black mb-1" for="email">Email</label>
-      <input class="w-full border border-gray-400 px-2 py-1 text-black" id="email" name="email" type="email" required />
+      <input class="w-full border border-gray-500 bg-gray-800 px-2 py-1 " id="email" name="email" type="email" required />
     </div>
     <div class="mb-4">
       <label class="block text-black mb-1" for="password">Password</label>
-      <input class="w-full border border-gray-400 px-2 py-1 text-black" id="password" name="password" type="password" required />
+      <input class="w-full border border-gray-500 bg-gray-800 px-2 py-1 " id="password" name="password" type="password" required />
     </div>
     <button class="px-4 py-1 border border-gray-400 bg-black" type="submit">Create Account</button>
   </form>
