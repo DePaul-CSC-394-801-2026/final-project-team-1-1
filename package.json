@@ -1,0 +1,28 @@
+{
+  "name": "final-project-team-1-1",
+  "version": "1.0.0",
+  "description": "Christian James  Maria Emin Matthew Hamza",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DePaul-CSC-394-801-2026/final-project-team-1-1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/DePaul-CSC-394-801-2026/final-project-team-1-1/issues"
+  },
+  "homepage": "https://github.com/DePaul-CSC-394-801-2026/final-project-team-1-1#readme",
+  "dependencies": {
+    "flowbite": "^4.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.0",
+    "tailwindcss": "^4.2.0"
+  }
+}
