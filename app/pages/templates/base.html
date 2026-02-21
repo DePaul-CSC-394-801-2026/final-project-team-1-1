@@ -3,39 +3,52 @@
 <html lang="en">
   <head>
     {% tailwind_css %}
-      <title>DIY Projects</title>
+    <title>Abode</title>
   </head>
-{# The base to appear on every page!!! #}
+  {# The base to appear on every page!!! #}
   <body class="bg-gray-100 min-h-screen flex flex-col">
-    <header class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-row items-center justify-between">
-            <a href="/" class="text-2xl font-bold text-black mb-4">DIY 4 U (or something else tacky)</a>
-            
-            <form method="GET" action="{% url 'search_results' %}" class="flex items-center gap-2">
-                <label for="search" class="text-md font-medium text-black">Search</label>
-                <div class="relative">
-                    <input
-                        type="search"
-                        name="search"
-                        id="search"
-                        value="{{ query }}"
-                        class="block w-full p-2 text-black text-sm border border-gray-300 bg-white"
-                        placeholder="Search DIY projects..."
-                    />
-                </div>
-                <button
-                    type="submit"
-                    class="text-white bg-blue-700 font-medium text-sm px-4 py-2"
-                >
-                    Search
-                </button>
-            </form>
+    <header class="bg-black border-b border-b-green-400">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="/" class="text-xl font-bold ">Abode</a>
+        <div class="flex items-center gap-3">
+            {#SHow user name when logged in, else the login/register buttons#}
+          {% if request.session.username %}
+            <span class="">{{ request.session.username }}</span>
+            <a href="/pages/logout/" class="px-3 py-1 border border-gray-400">Logout</a>
+          {% else %}
+            <a href="/pages/login/" class="px-3 py-1 border border-gray-400 ">Login</a>
+            <a href="/pages/register/" class="px-3 py-1 border border-gray-400">Register</a>
+          {% endif %}
         </div>
+      </div>
     </header>
 
+    {#Show login/logout messages#}
+    {% if messages %}
+        <div class="fixed bottom-4 right-4 flex flex-col items-end gap-2 w-full max-w-sm px-4">
+            {% for message in messages %}
+                <div class="messages shadow-lg border px-4 py-3 text-black
+                    {% if message.tags == 'success' %} border-green-500 bg-green-50
+                    {% elif message.tags == 'error' %} border-red-500 bg-red-50
+                    {% else %} border-gray-400 bg-white {% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
-    <main class="flex-grow p-4">
-    {% block content %}{% endblock %}
+    <main class="grow p-4">
+        {% block content %}{% endblock %}
     </main>
+
+  <script>
+      {#once the page has loaded, remove any messages after 3 seconds#}
+      document.addEventListener('DOMContentLoaded', () => {
+          const messages = document.querySelectorAll('.messages');
+          messages.forEach(message => {
+              setTimeout(() => message.remove(), 3000);
+          })
+      })
+  </script>
   </body>
 </html>
