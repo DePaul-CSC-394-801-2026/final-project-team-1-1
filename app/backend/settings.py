@@ -43,8 +43,6 @@ INSTALLED_APPS = [
     'theme',
     'pages',
     'landing',
-    'optimization',
-    'planning'
 ]
 
 MIDDLEWARE = [
