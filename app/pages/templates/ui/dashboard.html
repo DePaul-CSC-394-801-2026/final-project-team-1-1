@@ -1,0 +1,176 @@
+{% extends 'ui/base_ui.html' %}{% load static %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="relative overflow-hidden rounded-3xl bg-slate-900 p-8 md:p-12 mb-10 shadow-2xl border border-white/10">
+        <div class="absolute inset-0 opacity-40">
+            <img src="{% static 'images/hero.png' %}" class="w-full h-full object-cover" alt="Background">
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/50 via-slate-900/60 to-black"></div>
+        </div>
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="max-w-xl text-center md:text-left">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">Your Home is <span
+                        class="text-emerald-400">Resting</span>.</h1>
+                <p class="text-slate-300 text-lg mb-8 leading-relaxed">Everything looks great. You have 2 tasks that
+                    need your attention this week.</p>
+                <button
+                    class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-emerald-500/20">
+                    Add Reminder
+                </button>
+            </div>
+            <div class="hidden md:flex items-center justify-center">
+                <div
+                    class="relative w-48 h-48 rounded-full border-[12px] border-white/5 flex items-center justify-center">
+                    <div
+                        class="absolute inset-0 rounded-full border-[12px] border-emerald-500 border-t-transparent -rotate-45">
+                    </div>
+                    <div class="text-center">
+                        <span class="block text-4xl font-bold text-white">92%</span>
+                        <span class="text-xs uppercase tracking-widest text-slate-400">Health</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-8">
+            <section>
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <span class="w-2 h-8 bg-amber-500 rounded-full"></span>
+                        Urgent Needs
+                    </h2>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div
+                        class="group bg-slate-900/50 backdrop-blur-xl border border-white/5 p-6 rounded-2xl hover:border-amber-500/30 transition-all duration-300 cursor-pointer">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="bg-amber-500/20 p-3 rounded-xl group-hover:bg-amber-500/30 transition-colors">
+                                <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <span
+                                class="text-xs font-bold text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full">Overdue</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-1">Clean Bathroom</h3>
+                        <p class="text-slate-400 text-sm mb-4">Deep clean shower tile and sink fixtures.</p>
+                        <div class="flex items-center justify-between border-t border-white/5 pt-4 mt-2">
+                            <span class="text-xs text-slate-500 uppercase tracking-tighter font-semibold">Master
+                                Suite</span>
+                            <span class="text-xs text-slate-300">Reschedule?</span>
+                        </div>
+                    </div>
+
+
+                    <div
+                        class="group bg-slate-900/50 backdrop-blur-xl border border-white/5 p-6 rounded-2xl hover:border-emerald-500/30 transition-all duration-300 cursor-pointer">
+                        <div class="flex justify-between items-start mb-4">
+                            <div
+                                class="bg-emerald-500/20 p-3 rounded-xl group-hover:bg-emerald-500/30 transition-colors">
+                                <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <span
+                                class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full uppercase">5
+                                Days Left</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-1">Replace Fridge Filter</h3>
+                        <p class="text-slate-400 text-sm mb-4">Part #MWF - Water filtration maintenance.</p>
+                        <div class="flex items-center justify-between border-t border-white/5 pt-4 mt-2">
+                            <span class="text-xs text-slate-500 uppercase tracking-tighter font-semibold">Kitchen</span>
+                            <span class="text-xs text-emerald-400 font-bold hover:underline">Order Now</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <span class="w-2 h-8 bg-blue-500 rounded-full"></span>
+                        Explore Rooms
+                    </h2>
+                    <a href="#" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">Manage
+                        All</a>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {% for room in rooms %}
+                    <div
+                        class="bg-slate-900/50 backdrop-blur-xl border border-white/5 p-5 rounded-2xl text-center hover:bg-slate-800 transition-colors cursor-pointer group">
+                        <div
+                            class="w-12 h-12 bg-white/5 rounded-full mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-400" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                                </path>
+                            </svg>
+                        </div>
+                        <span class="block text-sm font-bold text-white">{{ room.name }}</span>
+                        <span class="block text-xs text-slate-500 mt-1">{{ room.assets.count }} Items</span>
+                    </div>
+                    {% empty %}
+                    <div
+                        class="bg-slate-900/50 backdrop-blur-xl border border-white/5 p-5 rounded-2xl text-center opacity-50">
+                        <span class="block text-sm font-bold text-white italic">Living Room</span>
+                    </div>
+                    <div
+                        class="bg-slate-900/50 backdrop-blur-xl border border-white/5 p-5 rounded-2xl text-center opacity-50">
+                        <span class="block text-sm font-bold text-white italic">Kitchen</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+        <div class="space-y-8">
+            <div class="bg-gradient-to-b from-slate-900 to-black rounded-3xl p-6 border border-white/5 shadow-xl">
+                <h2 class="text-xl font-bold text-white mb-6">Recently Done</h2>
+                <div class="space-y-6">
+                    <div class="flex gap-4">
+                        <div class="w-1 h-12 bg-emerald-500/50 rounded-full mt-1"></div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Watered Garden</h4>
+                            <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Yesterday •
+                                Outside</p>
+                            <p class="text-xs text-slate-400 italic">"Everything is blooming nicely."</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="w-1 h-12 bg-emerald-500/50 rounded-full mt-1"></div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Fixed Leaky Faucet</h4>
+                            <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">3 days ago •
+                                Master Bath</p>
+                            <p class="text-xs text-slate-400 italic">"Washer replaced."</p>
+                        </div>
+                    </div>
+                </div>
+                <button
+                    class="w-full mt-8 py-3 border border-white/10 rounded-2xl text-slate-400 text-sm font-bold hover:bg-white/5 transition-colors">
+                    View Full History
+                </button>
+            </div>
+            <div
+                class="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-600/20 relative overflow-hidden group">
+                <div class="relative z-10">
+                    <h3 class="text-lg font-bold mb-2">Pro Tip</h3>
+                    <p class="text-indigo-100 text-sm leading-relaxed mb-4">Draining your water heater once a year can
+                        extend its life by 5-10 years.</p>
+                    <a href="#"
+                        class="text-xs font-bold uppercase tracking-widest text-white underline underline-offset-4">Learn
+                        More</a>
+                </div>
+                <div
+                    class="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full rotate-12 group-hover:scale-125 transition-transform duration-700">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

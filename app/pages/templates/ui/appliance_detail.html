@@ -1,0 +1,172 @@
+{% extends 'ui/base_ui.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <nav class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest mb-8">
+        <a href="/pages/ui/appliances/" class="hover:text-white transition-colors">Appliances</a>
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <span class="text-slate-300">Samsung Bespoke Fridge</span>
+    </nav>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-8">
+            <div
+                class="bg-gradient-to-br from-slate-900 to-black p-8 rounded-[40px] border border-white/5 relative overflow-hidden group">
+                <div class="relative z-10">
+                    <div class="flex flex-wrap items-center gap-4 mb-6">
+                        <h1 class="text-3xl md:text-4xl font-extrabold text-white">Samsung Bespoke 4-Door</h1>
+                        <span
+                            class="px-4 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-black rounded-full border border-emerald-500/20 uppercase">Active</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 text-sm">
+                        <div>
+                            <p class="text-slate-500 uppercase text-[10px] font-black mb-1">Room</p>
+                            <p class="text-white font-bold">Kitchen</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-500 uppercase text-[10px] font-black mb-1">Brand</p>
+                            <p class="text-white font-bold">Samsung</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-500 uppercase text-[10px] font-black mb-1">Model #</p>
+                            <p class="text-white font-bold italic">RF23A9671SR</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-500 uppercase text-[10px] font-black mb-1">Year</p>
+                            <p class="text-white font-bold">2023</p>
+                        </div>
+                    </div>
+
+
+                    <div class="glass p-8 rounded-3xl mb-4 relative group">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-white">Service Health</h3>
+                            <span class="text-emerald-400 font-black text-2xl tracking-tighter">85%</span>
+                        </div>
+                        <div class="w-full bg-white/5 h-4 rounded-full overflow-hidden border border-white/10 p-[2px]">
+                            <div
+                                class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.3)] w-[85%] transition-all duration-1000">
+                            </div>
+                        </div>
+                        <div class="flex justify-between mt-4 text-xs font-bold text-slate-500">
+                            <span>Last Serviced: Jan 15, 2026</span>
+                            <span>Next Due: July 15, 2026</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="absolute -top-20 -left-20 w-64 h-64 bg-indigo-500/5 rounded-full blur-[100px]"></div>
+        </div>
+        <section class="bg-slate-900/50 p-8 rounded-[40px] border border-white/5">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold text-white">Consumable Parts</h2>
+                <span
+                    class="bg-white/5 px-3 py-1 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest">3
+                    Parts Tracked</span>
+            </div>
+
+            <div class="overflow-hidden">
+                <table class="w-full text-left">
+                    <thead
+                        class="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-white/5">
+                        <tr>
+                            <th class="pb-4">Part / Consumable</th>
+                            <th class="pb-4">Model & SKU</th>
+                            <th class="pb-4">Est. Cost</th>
+                            <th class="pb-4">Purchase</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        <tr class="border-b border-white/5 group hover:bg-white/5 transition-colors">
+                            <td class="py-6 pr-4">
+                                <div class="font-bold text-white">Water Filter</div>
+                                <div class="text-xs text-slate-500 lg:inline-block">Last replaced 4 months ago</div>
+                            </td>
+                            <td class="py-6 font-mono text-indigo-400 text-xs">HAF-QIN/EXP</td>
+                            <td class="py-6 text-white font-bold">$49.99</td>
+                            <td class="py-6">
+                                <button
+                                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-4 py-2 rounded-xl text-[10px] uppercase shadow-lg shadow-indigo-600/20 transition-all">Buy
+                                    Now</button>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-white/5 group hover:bg-white/5 transition-colors">
+                            <td class="py-6 pr-4">
+                                <div class="font-bold text-white">Air Filter</div>
+                                <div class="text-xs text-slate-500 lg:inline-block">6 months life left</div>
+                            </td>
+                            <td class="py-6 font-mono text-indigo-400 text-xs">FRESH-AIR-01</td>
+                            <td class="py-6 text-white font-bold">$12.50</td>
+                            <td class="py-6 text-slate-400">
+                                <svg class="w-5 h-5 mx-auto opacity-20" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                </svg>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button
+                class="w-full mt-8 py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-500 text-xs font-black uppercase tracking-widest hover:border-indigo-500/50 hover:text-indigo-400 transition-all">Catalog
+                Additional Part</button>
+        </section>
+    </div>
+    <div class="space-y-8">
+        <div class="bg-gradient-to-b from-slate-900 to-black p-8 rounded-[40px] border border-white/5">
+            <div class="text-center mb-8">
+                <p class="text-slate-500 text-[10px] font-black uppercase tracking-tighter mb-1">Service Projects
+                    Found</p>
+                <h3 class="text-4xl font-extrabold text-white">12 <span
+                        class="text-lg text-slate-600 italic font-medium ml-1">results</span></h3>
+            </div>
+            <div class="space-y-4">
+                <div
+                    class="p-4 bg-white/5 rounded-2xl border border-white/10 hover:border-indigo-500/30 transition-all cursor-pointer group">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">DIY
+                            Maintenance Kit</span>
+                        <span class="text-emerald-400 font-bold">$65</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500">Includes all 3 filters + cleaning brushes.</p>
+                </div>
+                <div
+                    class="p-4 bg-white/5 rounded-2xl border border-white/10 hover:border-indigo-500/30 transition-all cursor-pointer group">
+                    <div class="flex justify-between items-center mb-1">
+                        <span
+                            class="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">Professional
+                            Tune-up</span>
+                        <span class="text-indigo-400 font-bold">$149</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500">Scheduled tech visit for deep health check.</p>
+                </div>
+            </div>
+            <button
+                class="w-full mt-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-slate-400 text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-colors">View
+                Marketplace</button>
+        </div>
+
+
+        <div class="bg-slate-900/10 p-8 rounded-[40px] border border-white/5 border-dashed">
+            <h3 class="text-sm font-black uppercase text-slate-500 tracking-widest mb-6">Recent History</h3>
+            <div class="space-y-4 relative">
+                <div class="absolute left-2 top-2 bottom-2 w-px bg-white/5"></div>
+                <div class="relative pl-6">
+                    <div class="absolute left-1 top-2 w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <p class="text-xs text-white font-bold">Filter Swapped</p>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Jan 15, 2026</p>
+                </div>
+                <div class="relative pl-6">
+                    <div class="absolute left-1 top-2 w-2 h-2 rounded-full bg-slate-700"></div>
+                    <p class="text-xs text-white font-bold">Compressor Check</p>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Aug 22, 2025</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
