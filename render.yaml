@@ -1,0 +1,24 @@
+databases:
+  - name: abode
+    plan: free
+    databaseName: abode_db
+    user: abode_db_user
+
+services:
+  - type: web
+    plan: free
+    name: abode
+    runtime: python
+    buildCommand: './build.sh'
+    startCommand: 'python -m gunicorn backend.asgi:application -k uvicorn.workers.UvicornWorker --chdir app'
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: abode
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WEB_CONCURRENCY
+        value: 4
+      - key: DEBUG
+        value: false
