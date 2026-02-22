@@ -9,8 +9,8 @@ services:
     plan: free
     name: abode
     runtime: python
-    buildCommand: './build.sh'
-    startCommand: 'cd app && python -m gunicorn backend.asgi:application -k uvicorn.workers.UvicornWorker'
+    buildCommand: 'chmod +x build.sh && ./build.sh'
+    startCommand: 'cd app && gunicorn backend.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT'
     envVars:
       - key: DATABASE_URL
         fromDatabase:
