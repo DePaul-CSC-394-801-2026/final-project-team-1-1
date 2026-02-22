@@ -1,5 +1,4 @@
 .idea/*
-
 .vscode/*
 **/__pycache__/
 *.pyc
@@ -10,3 +9,7 @@
 out/
 .qodo
 .env
+venv/
+staticfiles/
+db.sqlite3
+node_modules/
