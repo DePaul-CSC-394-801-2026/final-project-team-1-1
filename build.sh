@@ -3,6 +3,7 @@ set -o errexit
 
 pip install -r requirements.txt
 
-python app/manage.py collectstatic --no-input
-
-python app/manage.py migrate
+pushd app >/dev/null
+python3 manage.py collectstatic --no-input
+python3 manage.py migrate
+popd >/dev/null
