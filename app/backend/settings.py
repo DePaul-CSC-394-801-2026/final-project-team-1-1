@@ -28,7 +28,9 @@ DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","127.0.0.1").split(",")
 if not DEBUG:
     ALLOWED_HOSTS.append('.onrender.com')
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+
+# Fix: Get SECRET_KEY from DJANGO_SECRET_KEY with fallback
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY") or os.environ.get("SECRET_KEY")
 
 
 

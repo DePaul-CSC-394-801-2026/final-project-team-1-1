@@ -16,9 +16,11 @@ services:
         fromDatabase:
           name: abode
           property: connectionString
-      - key: SECRET_KEY
+      - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: WEB_CONCURRENCY
         value: 4
+      - key: DEBUG
+        value: 'False'
       - key: DJANGO_ALLOWED_HOSTS
         value: '.onrender.com'
