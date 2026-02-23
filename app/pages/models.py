@@ -3,6 +3,23 @@ import uuid
 from django.core.validators import MinLengthValidator
 from django.db import models
 
+#Left, is what is stored, I capitalized the right to be pretty
+INTERVAL_CHOICES = [
+    ("daily", "Daily"),
+    ("weekly", "Weekly"),
+    ("monthly", "Monthly"),
+    ("quarterly", "Quarterly"),
+    ("yearly", "Yearly"),
+]
+# use this in build upcoming occurrences
+INTERVAL_DAY_MAP = {
+    "daily": 1,
+    "weekly": 7,
+    "monthly": 30,
+    "quarterly": 91,
+    "yearly": 365,
+}
+
 # The user will be what ultimately determines what assets are on their dashboard and what tasks they need to do, etc.
 class AppUser(models.Model):
     username = models.CharField(
@@ -46,12 +63,14 @@ class Asset(models.Model):
 # The task id is a uuid that is automatically generated on creation
 # The task is matched to the particular asset, when the asset is deleted, the task is deleted
 # The task can also be tied to a room, when the room is deleted, the task is deleted
-# TODO the interval will need to be adjusted when we figure out how to incorporate it
 # Might need to remove the completed
 class Task(models.Model):
+    INTERVAL_CHOICES = INTERVAL_CHOICES
     task_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=64)
-    interval = models.CharField(max_length=64, blank=True)
+    interval = models.CharField(max_length=16, choices=INTERVAL_CHOICES, blank=True)
+    next_due_date = models.DateField(null=True, blank=True)
+    last_completed_date = models.DateField(null=True, blank=True)
     #completed = models.BooleanField(default=False)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)

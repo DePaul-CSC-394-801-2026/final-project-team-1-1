@@ -79,13 +79,14 @@
     <div class="border rounded bg-black p-4">
       <p class="text-sm mb-2">Tasks</p>
       {% if tasks %}
-        <ul class="space-y-2 text-sm">
+{#          Overflow turns the area into scroll once content taks up max height#}
+        <ul class="space-y-2 text-sm max-h-64 overflow-y-auto pr-2">
           {% for task in tasks %}
             <li class="border-b pb-2 last:border-none">
               <div class="font-medium">{{ task.name }}</div>
               <div class="text-xs text-gray-300">Location: {% if task.asset %}{{ task.asset.name }}{% elif task.room %}{{ task.room.name }}{% else %}General{% endif %}</div>
               <div class="text-xs text-gray-300">
-                Interval: {% if task.interval %}{{ task.interval }}{% else %}Not set{% endif %}
+                Interval: {% if task.interval %}{{ task.get_interval_display }}{% else %}Not set{% endif %}
               </div>
               <div class="text-xs text-gray-300">Status: TODO....</div>
             </li>
@@ -97,14 +98,14 @@
     </div>
     <div class="border rounded bg-black p-4">
       <p class="text-sm  mb-2">Due soon</p>
-      {% if upcoming_tasks %}
-        <ul class="space-y-2 text-sm">
-          {% for task in upcoming_tasks %}
+      {% if upcoming_occurrences %}
+        <ul class="space-y-2 text-sm max-h-64 overflow-y-auto pr-2">
+          {% for entry in upcoming_occurrences %}
             <li class="border-b pb-2 last:border-none">
-              <div class="font-medium">{{ task.name }}</div>
-              <div class="text-xs text-gray-300">Assigned: {% if task.asset %}{{ task.asset.name }}{% elif task.room %}{{ task.room.name }}{% else %}General{% endif %}</div>
+              <div class="font-medium">{{ entry.task.name }}</div>
+              <div class="text-xs text-gray-300">Assigned: {% if entry.task.asset %}{{ entry.task.asset.name }}{% elif entry.task.room %}{{ entry.task.room.name }}{% else %}General{% endif %}</div>
               <div class="text-xs text-gray-300">
-                Next due: {% if task.interval %}{{ task.interval }}{% else %}TBD{% endif %}
+                Next due: {% if entry.due_date %}{{ entry.due_date }}{% else %}TBD{% endif %}
               </div>
             </li>
           {% endfor %}
@@ -162,7 +163,7 @@
       <input name="asset_brand" placeholder="Brand" class="w-full border px-2 py-1">
       <input name="asset_category" placeholder="Category" class="w-full border px-2 py-1">
       <select name="asset_room" class="w-full border px-2 py-1">
-        <option value="">default?</option>
+        <option value="" class="">Select Room</option>
         {% for room in rooms %}
           <option value="{{ room.room_id }}">{{ room.name }}</option>
         {% endfor %}
@@ -178,8 +179,14 @@
       <input type="hidden" name="action" value="add-task">
       <input type="hidden" name="return_room" value="{{ selected_room_id }}">
       <p class="text-sm ">Add task</p>
-      <input name="task_name" placeholder="Task name" class="w-full border px-2 py-1" required>
-      <input name="task_interval" placeholder="Interval (weekly, daily, etc.)" class="w-full border px-2 py-1">
+      <input name="task_name" placeholder="Task name (e.g., change air filter)" class="w-full border px-2 py-1" required>
+      <select name="task_interval" class="w-full border px-2 py-1" required title="Select how often this task recurs">
+        <option value="">Choose an interval</option>
+        {% for value, label in interval_choices %}
+          <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+      <input type="date" name="task_start_date" placeholder="First due date" class="w-full border px-2 py-1" required>
       <select name="task_room" class="w-full border px-2 py-1">
         <option value="">Room (optional)</option>
         {% for room in rooms %}
