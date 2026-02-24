@@ -20,6 +20,12 @@ INTERVAL_DAY_MAP = {
     "yearly": 365,
 }
 
+#choices for asset category
+CATEGORY_CHOICES = [
+    ("general", "General"),
+    ("appliance", "Appliance"),
+    ("furniture", "Furniture")
+]
 # The user will be what ultimately determines what assets are on their dashboard and what tasks they need to do, etc.
 class AppUser(models.Model):
     username = models.CharField(
@@ -53,8 +59,9 @@ class Room(models.Model):
 class Asset(models.Model):
     asset_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=64)
-    brand = models.CharField(max_length=64, blank=True)
-    category = models.CharField(max_length=32, blank=True)
+    brand = models.CharField(max_length=64, blank=True) # THIS USED AS MANUFACTURER. Could eventually be a constanstant as the other choices above are or something.
+    model_number = models.CharField(max_length=64, blank=True)
+    category = models.CharField(max_length=32, choices=CATEGORY_CHOICES, default="general")
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="assets")
 
     def __str__(self):

@@ -30,7 +30,7 @@
     <div class="border rounded bg-black p-4">
       <p class="text-md mb-2">Room list</p>
       {% if rooms %}
-        <ul class="space-y-1 text-sm">
+        <ul class="space-y-1 max-h-64 overflow-y-auto text-sm">
           {% for room in rooms %}
             {#fyi, justify between within container puts them on separate ends#}
             <li class="flex justify-between">
@@ -46,7 +46,7 @@
     <div class="border rounded bg-black p-4">
       <p class="text-md mb-2">Assets</p>
       {% if assets %}
-        <ul class="space-y-1 text-sm">
+        <ul class="space-y-1 text-sm max-h-64 overflow-y-auto">
           {% for asset in assets %}
             {#last makes sure that the last item does not get the styling#}
             <li class="border-zinc-400 border-b pb-2 last:border-none">
@@ -120,7 +120,7 @@
   <section class="border rounded bg-black p-4">
     <p class="text-sm mb-2">Activity log</p>
     {% if logs %}
-      <ul class="space-y-2 text-sm">
+      <ul class="space-y-2 max-h-64 overflow-y-auto text-sm">
         {% for log in logs %}
           <li class="border-b pb-2 last:border-none">
             <div class="font-medium">{{ log.task.name }}</div>
@@ -160,8 +160,17 @@
       <p class="text-sm ">Add asset</p>
         {#Again, these inputs tell our backend what actions to perform and which room view to return after submission#}
       <input name="asset_name" placeholder="Asset name" class="w-full border px-2 py-1" required>
-      <input name="asset_brand" placeholder="Brand" class="w-full border px-2 py-1">
-      <input name="asset_category" placeholder="Category" class="w-full border px-2 py-1">
+      <select name="asset_category" id="categorySelect" class="w-full border px-2 py-1">
+          {% for value, label in category_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+      </select>
+        {#This container is encapsulates the conditional fields that are dependen on the categorySelect being Appliance. See script below! :)#}
+        {#None hides the div when the page first loads#}
+      <div id="applianceFields" style="display: none;" class="space-y-2">
+        <input name="asset_brand" placeholder="Brand" class="w-full border px-2 py-1">
+        <input name="asset_model_number" placeholder="Model Number" class="w-full border px-2 py-1">
+      </div>
       <select name="asset_room" class="w-full border px-2 py-1">
         <option value="" class="">Select Room</option>
         {% for room in rooms %}
@@ -218,5 +227,13 @@
       <button type="submit" class="border px-3 py-1">Save</button>
     </form>
   </section>
+  <script>
+      {#Listens for chanfs to the category select section. If the current category is appliance, show the brand and model fields.#}
+    document.getElementById('categorySelect').addEventListener('change', function() {
+        const applianceDiv = document.getElementById('applianceFields');
+
+        applianceDiv.style.display = this.value === 'appliance' ? 'block' : 'none';
+    });
+  </script>
 </div>
 {% endblock %}
