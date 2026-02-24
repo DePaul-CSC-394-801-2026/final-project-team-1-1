@@ -190,6 +190,15 @@ def dashboard_view(request):
                     task.next_due_date = compute_next_due_date(task.interval, log.completion_date)
                     task.save(update_fields=["last_completed_date", "next_due_date"])
                 messages.success(request, "Log recorded for task. :)")
+        #Delete action        
+        elif action == "delete-room": 
+            room_id = request.POST.get('room_id')
+            room = rooms_qs.filter(room_id=room_id).first() if room_id else None
+            if not room: 
+                messages.error(request, "Room was not found")
+            else:
+                room.delete()
+                messages.success(request, "Room was deleted.")
 
         #Todo, add filtering implementation. Will need to be handled/returned here. I had the thought above but im tired
         return redirect("dashboard")
