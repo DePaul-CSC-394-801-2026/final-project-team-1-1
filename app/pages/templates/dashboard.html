@@ -2,8 +2,8 @@
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-5">
   <header class="border-b pb-4">
-    <h1 class="text-2xl">Dashboard</h1>
-    <p class="text-md">Heyyyyyyyyyy, {{ request.session.username }}.</p>
+    <h1 class="text-2xl text-black">Dashboard</h1>
+    <p class="text-md text-black">Heyyyyyyyyyy, {{ request.session.username }}.</p>
   </header>
 
     {#Global stats#}
@@ -16,12 +16,12 @@
     <div class="border rounded p-3 bg-black">
       <p class="text-xs uppercase text-gray-300">Assets</p>
       <p class="text-3xl font-bold">{{ assets.count }}</p>
-      <p class="text-sm text-gray-600">in view</p>
+      <p class="text-sm text-gray-300">in view</p>
     </div>
     <div class="border rounded p-3 bg-black">
       <p class="text-xs uppercase text-gray-300">Tasks</p>
       <p class="text-3xl font-bold">{{ tasks.count }}</p>
-      <p class="text-sm text-gray-600">linked to these rooms</p>
+      <p class="text-sm text-gray-300">linked to these rooms</p>
     </div>
   </section>
 
@@ -188,14 +188,18 @@
       <input type="hidden" name="action" value="add-task">
       <input type="hidden" name="return_room" value="{{ selected_room_id }}">
       <p class="text-sm ">Add task</p>
-      <input name="task_name" placeholder="Task name (e.g., change air filter)" class="w-full border px-2 py-1" required>
-      <select name="task_interval" class="w-full border px-2 py-1" required title="Select how often this task recurs">
-        <option value="">Choose an interval</option>
-        {% for value, label in interval_choices %}
-          <option value="{{ value }}">{{ label }}</option>
-        {% endfor %}
-      </select>
-      <input type="date" name="task_start_date" placeholder="First due date" class="w-full border px-2 py-1" required>
+    <div class="border-b space-y-2 pb-2">
+        <input name="task_name" placeholder="Task name (e.g., change air filter)" class="w-full border px-2 py-1" required>
+        <select name="task_interval" class="w-full border px-2 py-1" required title="Select how often this task recurs">
+            <option value="">Choose an interval</option>
+            {% for value, label in interval_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+        <input type="date" name="task_start_date" placeholder="First due date" class="w-full border px-2 py-1" required>
+        <p class="text-xs text-gray-400">Select the first due date</p>
+    </div>
+
       <select name="task_room" class="w-full border px-2 py-1">
         <option value="">Room (optional)</option>
         {% for room in rooms %}
@@ -215,13 +219,17 @@
       <input type="hidden" name="action" value="add-log">
       <input type="hidden" name="return_room" value="{{ selected_room_id }}">
       <p class="text-sm ">Add log</p>
-      <select name="log_task" class="w-full border px-2 py-1" required>
-        <option value="">Choose task</option>
-        {% for task in task_choices %}
-          <option value="{{ task.task_id }}">{{ task.name }}</option>
-        {% endfor %}
-      </select>
-      <input type="date" name="log_completion_date" class="w-full border px-2 py-1">
+    <div class="border-b space-y-2 pb-2">
+        <select name="log_task" class="w-full border px-2 py-1" required>
+            <option value="">Choose task</option>
+            {% for task in task_choices %}
+                <option value="{{ task.task_id }}">{{ task.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="date" name="log_completion_date" class="w-full border px-2 py-1">
+        <p class="text-xs text-gray-400">Completion date (optional)</p>
+    </div>
+
       <input name="log_cost" placeholder="Cost" class="w-full border px-2 py-1">
       <textarea name="log_notes" placeholder="Notes" class="w-full border px-2 py-1" rows="2"></textarea>
       <button type="submit" class="border px-3 py-1">Save</button>
