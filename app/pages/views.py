@@ -1,14 +1,30 @@
+from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import redirect, render
 
-from .models import AppUser, Asset, Log, Room, Task
+from .models import AppUser, Asset, Log, Room, Task, INTERVAL_DAY_MAP, CATEGORY_CHOICES
 
+# generates 3 duplicate occurrences of a particular task and return them to add them to the context displayed on the dashboard
+def build_upcoming_occurrences(tasks, duplicates=3):
+    occurrences = []
+    upcoming_tasks = tasks.order_by("next_due_date")
+    for task in upcoming_tasks:
+        due_date = task.next_due_date
+        for i in range(duplicates):
+            occurrences.append({"task": task, "due_date": due_date})
+            interval_days = INTERVAL_DAY_MAP.get(task.interval)
+            if not interval_days:
+                break
+            due_date += timedelta(days=interval_days)
+    return occurrences
 
-def search_view(request):
-    return render(request, "base.html")
+#Calculate next due date from interval and start date. Could probably refactor this out.
+def compute_next_due_date(interval, start_date):
+    days = INTERVAL_DAY_MAP.get(interval)
+    return start_date + timedelta(days=days)
 
 
 # Login view, just like to-do app
@@ -94,43 +110,63 @@ def dashboard_view(request):
         elif action == "add-asset":
             name = request.POST.get("asset_name", "").strip()
             brand = request.POST.get("asset_brand", "").strip()
-            category = request.POST.get("asset_category", "").strip()
+            category = request.POST.get("asset_category", "general").strip()
+            model_number = request.POST.get("asset_model_number", "").strip()
             room_id = request.POST.get("asset_room")
-            # If room is not specified, default to the first room in the user's rooms. check if asset name is there, else create the opject and add it
-            room = rooms_qs.filter(room_id=room_id).first() if room_id else rooms_qs.first()
+            room = None
+            if room_id:
+                room = rooms_qs.filter(room_id=room_id).first()
+            if not room:
+                room = selected_room or rooms_qs.first()
             if not room:
                 messages.error(request, "Create a room first to place assets.")
             elif not name:
                 messages.error(request, "Asset name is required.")
             else:
-                Asset.objects.create(name=name, brand=brand, category=category, room=room)
+                Asset.objects.create(name=name, brand=brand, category=category, model_number=model_number, room=room)
                 messages.success(request, "Asset added to the room.")
 
-        # If the action is to add a task, get the mandatory task name, optional interval, asset and room from the form else throw an error
+        # If the action is to add a task, get the mandatory task name, optional interval and start date, asset and room from the form else throw an error
         elif action == "add-task":
             name = request.POST.get("task_name", "").strip()
-            interval = request.POST.get("task_interval", "").strip()
+            interval = request.POST.get("task_interval", "")
+            start_date_value = request.POST.get("task_start_date", "").strip()
             asset_id = request.POST.get("task_asset")
             room_id = request.POST.get("task_room")
-            # Verify that the asset belongs to the user's rooms else skip query
-            asset = Asset.objects.filter(asset_id=asset_id, room__user=user).first() if asset_id else None
-            # If room is not specified, default to the first room in the user's rooms.'
-            room = rooms_qs.filter(room_id=room_id).first() if room_id else None
-            if not name:
-                messages.error(request, "Task name is required.")
+
+            # If somehow the request goes through without required data expose error
+            if not name or not interval or not start_date_value:
+                messages.error(request, "Task name, interval, and start date are required.")
             else:
-                Task.objects.create(name=name, interval=interval, asset=asset, room=room)
-                messages.success(request, "Task stub saved.")
+                # converts string into datetime object and extracts just the date, not the time
+                start_date = datetime.fromisoformat(start_date_value).date()
+                asset = Asset.objects.filter(asset_id=asset_id, room__user=user).first() if asset_id else None
+                room = rooms_qs.filter(room_id=room_id).first() if room_id else None
+                if not room:
+                    room = selected_room or rooms_qs.first()
+                if not room and not asset:
+                    messages.error(request, "Create or choose a room/asset before adding a task.")
+                else:
+                    #Create task
+                    next_due = compute_next_due_date(interval, start_date)
+
+                    Task.objects.create(
+                        name=name,
+                        interval=interval,
+                        asset=asset,
+                        room=room,
+                        last_completed_date=start_date,
+                        next_due_date=next_due,
+                    )
+                    messages.success(request, "Task created successfully.")
 
         # extract form data
         elif action == "add-log":
             task_id = request.POST.get("log_task")
-            completion_date = request.POST.get("log_completion_date") or None
+            completion_date_value = request.POST.get("log_completion_date") or None
             notes = request.POST.get("log_notes", "").strip()
             cost_value = request.POST.get("log_cost", "").strip()
 
-            # find tasks where either the task is linked to a room owned by the uesr or where it is linked to an asset in a room owned by the user
-            # the asset__room__user part is how django can handle foreign keys. Task has an asset, asset has room, room has user. Ya dig? It is like a join statsement where user = user
             task = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)).filter(task_id=task_id).first()
             if not task:
                 messages.error(request, "Pick a valid task for the log.")
@@ -142,7 +178,17 @@ def dashboard_view(request):
                     except InvalidOperation:
                         cost = None
                         messages.error(request, "Cost could not be read :(")
-                Log.objects.create(task=task, completion_date=completion_date, cost=cost, notes=notes)
+
+                # Convert the date string to a date object if provided
+                completion_date = None
+                if completion_date_value:
+                    completion_date = datetime.fromisoformat(completion_date_value).date()
+
+                log = Log.objects.create(task=task, completion_date=completion_date, cost=cost, notes=notes)
+                if log.completion_date:
+                    task.last_completed_date = log.completion_date
+                    task.next_due_date = compute_next_due_date(task.interval, log.completion_date)
+                    task.save(update_fields=["last_completed_date", "next_due_date"])
                 messages.success(request, "Log recorded for task. :)")
 
         #Todo, add filtering implementation. Will need to be handled/returned here. I had the thought above but im tired
@@ -154,8 +200,8 @@ def dashboard_view(request):
 
     #Will need to order by due date
     logs = Log.objects.filter(task__in=tasks)
-    #Get only five upcoming tasks for now. Needs to be prioritized by due date
-    upcoming_tasks = tasks.filter()[:5]
+    #Generate upcoming occurrences
+    upcoming_occurrences = build_upcoming_occurrences(tasks)
 
     #Everything we are passing to the dashboard page is in the context
     context = {
@@ -164,10 +210,12 @@ def dashboard_view(request):
         "selected_room_id": selected_room_id,
         "assets": assets,
         "tasks": tasks,
-        "upcoming_tasks": upcoming_tasks,
+        "upcoming_occurrences": upcoming_occurrences,
         "logs": logs,
         "asset_choices": Asset.objects.filter(room__user=user),
-        "task_choices": Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user))
+        "task_choices": Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)),
+        "interval_choices": Task.INTERVAL_CHOICES,
+        "category_choices": CATEGORY_CHOICES,
     }
     return render(request, "dashboard.html", context)
 

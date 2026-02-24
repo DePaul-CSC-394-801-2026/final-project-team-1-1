@@ -2,8 +2,8 @@
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-5">
   <header class="border-b pb-4">
-    <h1 class="text-2xl">Dashboard</h1>
-    <p class="text-md">Heyyyyyyyyyy, {{ request.session.username }}.</p>
+    <h1 class="text-2xl text-black">Dashboard</h1>
+    <p class="text-md text-black">Heyyyyyyyyyy, {{ request.session.username }}.</p>
   </header>
 
     {#Global stats#}
@@ -16,12 +16,12 @@
     <div class="border rounded p-3 bg-black">
       <p class="text-xs uppercase text-gray-300">Assets</p>
       <p class="text-3xl font-bold">{{ assets.count }}</p>
-      <p class="text-sm text-gray-600">in view</p>
+      <p class="text-sm text-gray-300">in view</p>
     </div>
     <div class="border rounded p-3 bg-black">
       <p class="text-xs uppercase text-gray-300">Tasks</p>
       <p class="text-3xl font-bold">{{ tasks.count }}</p>
-      <p class="text-sm text-gray-600">linked to these rooms</p>
+      <p class="text-sm text-gray-300">linked to these rooms</p>
     </div>
   </section>
 
@@ -30,7 +30,7 @@
     <div class="border rounded bg-black p-4">
       <p class="text-md mb-2">Room list</p>
       {% if rooms %}
-        <ul class="space-y-1 text-sm">
+        <ul class="space-y-1 max-h-64 overflow-y-auto text-sm">
           {% for room in rooms %}
             {#fyi, justify between within container puts them on separate ends#}
             <li class="flex justify-between">
@@ -46,7 +46,7 @@
     <div class="border rounded bg-black p-4">
       <p class="text-md mb-2">Assets</p>
       {% if assets %}
-        <ul class="space-y-1 text-sm">
+        <ul class="space-y-1 text-sm max-h-64 overflow-y-auto">
           {% for asset in assets %}
             {#last makes sure that the last item does not get the styling#}
             <li class="border-zinc-400 border-b pb-2 last:border-none">
@@ -79,13 +79,14 @@
     <div class="border rounded bg-black p-4">
       <p class="text-sm mb-2">Tasks</p>
       {% if tasks %}
-        <ul class="space-y-2 text-sm">
+{#          Overflow turns the area into scroll once content taks up max height#}
+        <ul class="space-y-2 text-sm max-h-64 overflow-y-auto pr-2">
           {% for task in tasks %}
             <li class="border-b pb-2 last:border-none">
               <div class="font-medium">{{ task.name }}</div>
               <div class="text-xs text-gray-300">Location: {% if task.asset %}{{ task.asset.name }}{% elif task.room %}{{ task.room.name }}{% else %}General{% endif %}</div>
               <div class="text-xs text-gray-300">
-                Interval: {% if task.interval %}{{ task.interval }}{% else %}Not set{% endif %}
+                Interval: {% if task.interval %}{{ task.get_interval_display }}{% else %}Not set{% endif %}
               </div>
               <div class="text-xs text-gray-300">Status: TODO....</div>
             </li>
@@ -97,14 +98,14 @@
     </div>
     <div class="border rounded bg-black p-4">
       <p class="text-sm  mb-2">Due soon</p>
-      {% if upcoming_tasks %}
-        <ul class="space-y-2 text-sm">
-          {% for task in upcoming_tasks %}
+      {% if upcoming_occurrences %}
+        <ul class="space-y-2 text-sm max-h-64 overflow-y-auto pr-2">
+          {% for entry in upcoming_occurrences %}
             <li class="border-b pb-2 last:border-none">
-              <div class="font-medium">{{ task.name }}</div>
-              <div class="text-xs text-gray-300">Assigned: {% if task.asset %}{{ task.asset.name }}{% elif task.room %}{{ task.room.name }}{% else %}General{% endif %}</div>
+              <div class="font-medium">{{ entry.task.name }}</div>
+              <div class="text-xs text-gray-300">Assigned: {% if entry.task.asset %}{{ entry.task.asset.name }}{% elif entry.task.room %}{{ entry.task.room.name }}{% else %}General{% endif %}</div>
               <div class="text-xs text-gray-300">
-                Next due: {% if task.interval %}{{ task.interval }}{% else %}TBD{% endif %}
+                Next due: {% if entry.due_date %}{{ entry.due_date }}{% else %}TBD{% endif %}
               </div>
             </li>
           {% endfor %}
@@ -119,7 +120,7 @@
   <section class="border rounded bg-black p-4">
     <p class="text-sm mb-2">Activity log</p>
     {% if logs %}
-      <ul class="space-y-2 text-sm">
+      <ul class="space-y-2 max-h-64 overflow-y-auto text-sm">
         {% for log in logs %}
           <li class="border-b pb-2 last:border-none">
             <div class="font-medium">{{ log.task.name }}</div>
@@ -159,10 +160,19 @@
       <p class="text-sm ">Add asset</p>
         {#Again, these inputs tell our backend what actions to perform and which room view to return after submission#}
       <input name="asset_name" placeholder="Asset name" class="w-full border px-2 py-1" required>
-      <input name="asset_brand" placeholder="Brand" class="w-full border px-2 py-1">
-      <input name="asset_category" placeholder="Category" class="w-full border px-2 py-1">
+      <select name="asset_category" id="categorySelect" class="w-full border px-2 py-1">
+          {% for value, label in category_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+      </select>
+        {#This container is encapsulates the conditional fields that are dependen on the categorySelect being Appliance. See script below! :)#}
+        {#None hides the div when the page first loads#}
+      <div id="applianceFields" style="display: none;" class="space-y-2">
+        <input name="asset_brand" placeholder="Brand" class="w-full border px-2 py-1">
+        <input name="asset_model_number" placeholder="Model Number" class="w-full border px-2 py-1">
+      </div>
       <select name="asset_room" class="w-full border px-2 py-1">
-        <option value="">default?</option>
+        <option value="" class="">Select Room</option>
         {% for room in rooms %}
           <option value="{{ room.room_id }}">{{ room.name }}</option>
         {% endfor %}
@@ -178,8 +188,18 @@
       <input type="hidden" name="action" value="add-task">
       <input type="hidden" name="return_room" value="{{ selected_room_id }}">
       <p class="text-sm ">Add task</p>
-      <input name="task_name" placeholder="Task name" class="w-full border px-2 py-1" required>
-      <input name="task_interval" placeholder="Interval (weekly, daily, etc.)" class="w-full border px-2 py-1">
+    <div class="border-b space-y-2 pb-2">
+        <input name="task_name" placeholder="Task name (e.g., change air filter)" class="w-full border px-2 py-1" required>
+        <select name="task_interval" class="w-full border px-2 py-1" required title="Select how often this task recurs">
+            <option value="">Choose an interval</option>
+            {% for value, label in interval_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+        <input type="date" name="task_start_date" placeholder="First due date" class="w-full border px-2 py-1" required>
+        <p class="text-xs text-gray-400">Select the first due date</p>
+    </div>
+
       <select name="task_room" class="w-full border px-2 py-1">
         <option value="">Room (optional)</option>
         {% for room in rooms %}
@@ -199,17 +219,29 @@
       <input type="hidden" name="action" value="add-log">
       <input type="hidden" name="return_room" value="{{ selected_room_id }}">
       <p class="text-sm ">Add log</p>
-      <select name="log_task" class="w-full border px-2 py-1" required>
-        <option value="">Choose task</option>
-        {% for task in task_choices %}
-          <option value="{{ task.task_id }}">{{ task.name }}</option>
-        {% endfor %}
-      </select>
-      <input type="date" name="log_completion_date" class="w-full border px-2 py-1">
+    <div class="border-b space-y-2 pb-2">
+        <select name="log_task" class="w-full border px-2 py-1" required>
+            <option value="">Choose task</option>
+            {% for task in task_choices %}
+                <option value="{{ task.task_id }}">{{ task.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="date" name="log_completion_date" class="w-full border px-2 py-1">
+        <p class="text-xs text-gray-400">Completion date (optional)</p>
+    </div>
+
       <input name="log_cost" placeholder="Cost" class="w-full border px-2 py-1">
       <textarea name="log_notes" placeholder="Notes" class="w-full border px-2 py-1" rows="2"></textarea>
       <button type="submit" class="border px-3 py-1">Save</button>
     </form>
   </section>
+  <script>
+      {#Listens for chanfs to the category select section. If the current category is appliance, show the brand and model fields.#}
+    document.getElementById('categorySelect').addEventListener('change', function() {
+        const applianceDiv = document.getElementById('applianceFields');
+
+        applianceDiv.style.display = this.value === 'appliance' ? 'block' : 'none';
+    });
+  </script>
 </div>
 {% endblock %}
