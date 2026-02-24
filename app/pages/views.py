@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import redirect, render
 
-from .models import AppUser, Asset, Log, Room, Task, INTERVAL_DAY_MAP
+from .models import AppUser, Asset, Log, Room, Task, INTERVAL_DAY_MAP, CATEGORY_CHOICES
 
 # generates 3 duplicate occurrences of a particular task and return them to add them to the context displayed on the dashboard
 def build_upcoming_occurrences(tasks, duplicates=3):
@@ -110,7 +110,8 @@ def dashboard_view(request):
         elif action == "add-asset":
             name = request.POST.get("asset_name", "").strip()
             brand = request.POST.get("asset_brand", "").strip()
-            category = request.POST.get("asset_category", "").strip()
+            category = request.POST.get("asset_category", "general").strip()
+            model_number = request.POST.get("asset_model_number", "").strip()
             room_id = request.POST.get("asset_room")
             room = None
             if room_id:
@@ -122,7 +123,7 @@ def dashboard_view(request):
             elif not name:
                 messages.error(request, "Asset name is required.")
             else:
-                Asset.objects.create(name=name, brand=brand, category=category, room=room)
+                Asset.objects.create(name=name, brand=brand, category=category, model_number=model_number, room=room)
                 messages.success(request, "Asset added to the room.")
 
         # If the action is to add a task, get the mandatory task name, optional interval and start date, asset and room from the form else throw an error
@@ -223,6 +224,7 @@ def dashboard_view(request):
         "asset_choices": Asset.objects.filter(room__user=user),
         "task_choices": Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)),
         "interval_choices": Task.INTERVAL_CHOICES,
+        "category_choices": CATEGORY_CHOICES,
     }
     return render(request, "dashboard.html", context)
 
