@@ -85,6 +85,9 @@ def dashboard_view(request):
     # Fetch rooms for the user
     rooms_qs = user.rooms.all()
 
+    #Fetch all assets for the user
+    assets_qs = Asset.objects.filter(room__user=user)
+
     #Initially fetch all rooms. TODO add filtering by room
     selected_room_id = request.GET.get("room", "all")
     selected_room = None
@@ -199,6 +202,15 @@ def dashboard_view(request):
             else:
                 room.delete()
                 messages.success(request, "Room was deleted.")
+
+        elif action == "delete-asset":
+            asset_id = request.POST.get('asset_id')
+            asset = assets_qs.filter(asset_id=asset_id).first() if asset_id else None
+            if not asset:
+                messages.error(request, "Asset was not found")
+            else:
+                asset.delete()
+                messages.success(request, "Asset was deleted")
 
         #Todo, add filtering implementation. Will need to be handled/returned here. I had the thought above but im tired
         return redirect("dashboard")

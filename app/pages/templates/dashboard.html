@@ -12,21 +12,21 @@
       <p class="text-3xl font-bold">{{ rooms.count }}</p>
       <p class="text-sm text-black">total</p>
     </div>
-    <div class="border rounded p-3 bg-white">
-      <p class="text-xs uppercase text-gray-300">Assets</p>
+    <div class="border rounded p-3 bg-[#dbf3fa]">
+      <p class="text-xs uppercase text-black">Assets</p>
       <p class="text-3xl font-bold">{{ assets.count }}</p>
-      <p class="text-sm text-gray-300">in view</p>
+      <p class="text-sm text-black">in view</p>
     </div>
-    <div class="border rounded p-3 bg-white">
-      <p class="text-xs uppercase text-gray-300">Tasks</p>
+    <div class="border rounded p-3 bg-[#dbf3fa]">
+      <p class="text-xs uppercase text-black">Tasks</p>
       <p class="text-3xl font-bold">{{ tasks.count }}</p>
-      <p class="text-sm text-gray-300">linked to these rooms</p>
+      <p class="text-sm text-black">linked to these rooms</p>
     </div>
   </section>
 
     {#Room n assets overview#}
   <section class="grid gap-4 grid-cols-2">
-    <div class="border rounded bg-white p-4">
+    <div class="border rounded bg-[#dbf3fa] p-4">
       <p class="text-md mb-2">Room list</p>
       {% if rooms %}
         <ul class="space-y-1 max-h-64 overflow-y-auto text-sm">
@@ -53,7 +53,7 @@
         <p class="text-xs">No rooms yet.</p>
       {% endif %}
     </div>
-    <div class="border rounded bg-white p-4">
+    <div class="border rounded bg-[#dbf3fa] p-4">
       <p class="text-md mb-2">Assets</p>
       {% if assets %}
         <ul class="space-y-1 text-sm max-h-64 overflow-y-auto">
@@ -75,6 +75,15 @@
                 {% endif %}
               </div>
               <div class="text-xs">Room: {{ asset.room.name }}</div>
+              <form method="POST"
+              action="{% url 'dashboard'%}"
+              onsubmit="return confirm('Want to delete {{asset.name}}?')">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete-asset">
+              <input type="hidden" name="asset_id" value="{{asset.asset_id}}">
+              <button type="submit" title="Delete Asset" class="text-red-400">Delete
+              </button>
+              </form>
             </li>
           {% endfor %}
         </ul>
@@ -86,7 +95,7 @@
 
     {#Tasks and due soon section#}
   <section class="grid gap-4 grid-cols-2">
-    <div class="border rounded bg-white p-4">
+    <div class="border rounded bg-[#dbf3fa] p-4">
       <p class="text-sm mb-2">Tasks</p>
       {% if tasks %}
 {#          Overflow turns the area into scroll once content taks up max height#}
@@ -106,7 +115,7 @@
         <p class="text-xs text-gray-300">Add a task to track maintenance or chores.</p>
       {% endif %}
     </div>
-    <div class="border rounded bg-white p-4">
+    <div class="border rounded bg-[#dbf3fa] p-4">
       <p class="text-sm  mb-2">Due soon</p>
       {% if upcoming_occurrences %}
         <ul class="space-y-2 text-sm max-h-64 overflow-y-auto pr-2">
@@ -127,7 +136,7 @@
   </section>
 
     {#Activity log secton. Takes up full width when max not specified#}
-  <section class="border rounded bg-white p-4">
+  <section class="border rounded bg-[#dbf3fa] p-4">
     <p class="text-sm mb-2">Activity log</p>
     {% if logs %}
       <ul class="space-y-2 max-h-64 overflow-y-auto text-sm">
@@ -153,7 +162,7 @@
 
   {#Add room  & asset section#}
   <section class="grid gap-4 md:grid-cols-2">
-    <form method="post" class="border rounded bg-white p-4 space-y-2">
+    <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
       {% csrf_token %}
         {#These inputs tell our backend what actions to perform and which room view to return after submission#}
       <input type="hidden" name="action" value="add-room">
@@ -163,7 +172,7 @@
       <textarea name="room_description" placeholder="Description" class="w-full border px-2 py-1" rows="2"></textarea>
       <button type="submit" class="border px-3 py-1">Save</button>
     </form>
-    <form method="post" class="border rounded bg-black p-4 space-y-2">
+    <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
       {% csrf_token %}
       <input type="hidden" name="action" value="add-asset">
       <input type="hidden" name="return_room" value="{{ selected_room_id }}">
@@ -193,7 +202,7 @@
 
     {#Add task & log section. It is basically just a copy paste of the asset but for logs and tasks#}
   <section class="grid gap-4 md:grid-cols-2">
-    <form method="post" class="border rounded bg-black p-4 space-y-2">
+    <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
       {% csrf_token %}
       <input type="hidden" name="action" value="add-task">
       <input type="hidden" name="return_room" value="{{ selected_room_id }}">
@@ -224,7 +233,7 @@
       </select>
       <button type="submit" class="border px-3 py-1">Save</button>
     </form>
-    <form method="post" class="border rounded bg-black p-4 space-y-2">
+    <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
       {% csrf_token %}
       <input type="hidden" name="action" value="add-log">
       <input type="hidden" name="return_room" value="{{ selected_room_id }}">
