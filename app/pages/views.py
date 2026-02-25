@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import redirect, render
 
-from .models import AppUser, Asset, Log, Room, Task, INTERVAL_DAY_MAP, CATEGORY_CHOICES
+from .models import AppUser, Asset, AssetDetails, Log, Room, Task, INTERVAL_DAY_MAP, CATEGORY_CHOICES
 
 # generates 3 duplicate occurrences of a particular task and return them to add them to the context displayed on the dashboard
 def build_upcoming_occurrences(tasks, duplicates=3):
@@ -126,7 +126,8 @@ def dashboard_view(request):
             elif not name:
                 messages.error(request, "Asset name is required.")
             else:
-                Asset.objects.create(name=name, brand=brand, category=category, model_number=model_number, room=room)
+                details = AssetDetails(name=name, brand=brand,model_number=model_number)
+                Asset.objects.create(category=category, details=details, room=room)
                 messages.success(request, "Asset added to the room.")
 
         # If the action is to add a task, get the mandatory task name, optional interval and start date, asset and room from the form else throw an error
