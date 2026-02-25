@@ -238,7 +238,7 @@
         {#Brand Selector#}
         <select name="asset_brand" id="brandSelect" class="w-full border px-2 py-1" required>
           <option value="">Select Brand</option>
-          {% for brand in brands %}
+          {% for brand in stored_brands %}
             <option value="{{ brand }}">{{ brand }}</option>
           {% endfor %}
         </select>
@@ -386,36 +386,6 @@
       storedSection.classList.add("hidden");
       customSection.classList.remove("hidden");
     });
-</script>
-<script>
-  {#Filters drop downs for stored assets#}
-  const brandSelect = document.getElementById("brandSelect");
-  const nameSelect = document.getElementById("nameSelect");
-  const modelSelect = document.getElementById("modelSelect");
-
-  function filterOptions(selectElement, filterFunc) {
-    for (const option of selectEl.options) {
-      if (!option.value) continue;
-      option.hidden = !filterFn(option);
-    }
-    selectEl.selectedIndex = 0;
-  }
-
-  brandSelect.addEventListener("change", function() {
-    const selectedBrand = brandSelect.value;
-
-    filterOptions(nameSelect, option => option.dataset.brand === selectedBrand);
-    filterOptions(modelSelect, option => option.dataset.brand === selectedBrand);
-  });
-
-  nameSelect.addEventListener("change", function() {
-    const selectedBrand = brandSelect.value;
-    const selectedName = nameSelect.value;
-
-    filterOptions(modelSelect, option => 
-      option.dataset.brand === selectedBrand && option.dataset.name === selectedName
-    );
-  });
 </script>
 </div>
 {% endblock %}
