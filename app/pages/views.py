@@ -108,8 +108,8 @@ def dashboard_view(request):
                 messages.success(request, "Room added for you to organize.")
             else:
                 messages.error(request, "Room name is required.")
-
-        # If the action is to add an asset, get the mandatory asset name, optional brand, optional category and room from the form else throw an error
+        
+        #Adding a stored asset
         elif action == "add-asset":
             name = request.POST.get("asset_name", "").strip()
             brand = request.POST.get("asset_brand", "").strip()
@@ -126,7 +126,27 @@ def dashboard_view(request):
             elif not name:
                 messages.error(request, "Asset name is required.")
             else:
-                details = AssetDetails(name=name, brand=brand,model_number=model_number)
+                details = AssetDetails.objects.get(brand=brand, name=name, model_number=model_number)
+                Asset.objects.create(details=details, category=category, room=room)
+
+        # If the action is to add a custom asset, get the mandatory asset name, optional brand, optional category and room from the form else throw an error
+        elif action == "add-custom-asset":
+            name = request.POST.get("asset_name", "").strip()
+            brand = request.POST.get("asset_brand", "").strip()
+            category = request.POST.get("asset_category", "general").strip()
+            model_number = request.POST.get("asset_model_number", "").strip()
+            room_id = request.POST.get("asset_room")
+            room = None
+            if room_id:
+                room = rooms_qs.filter(room_id=room_id).first()
+            if not room:
+                room = selected_room or rooms_qs.first()
+            if not room:
+                messages.error(request, "Create a room first to place assets.")
+            elif not name:
+                messages.error(request, "Asset name is required.")
+            else:
+                details = AssetDetails(name=name, brand=brand,model_number=model_number, owner=user)
                 details.save()
                 Asset.objects.create(category=category, details=details, room=room)
                 messages.success(request, "Asset added to the room.")
@@ -274,6 +294,9 @@ def dashboard_view(request):
     #Get all assets/tasks that belong to rooms owned by the user
     assets = Asset.objects.filter(room__user=user)
     tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user))
+    stored_brands = AssetDetails.objects.filter(owner__isnull=True).values_list('brand', flat=True).distinct().order_by('brand')
+    stored_asset_details = AssetDetails.objects.filter(owner__isnull=True)
+
 
 
     #Will need to order by due date
@@ -287,6 +310,8 @@ def dashboard_view(request):
         "selected_room": selected_room,
         "selected_room_id": selected_room_id,
         "assets": assets,
+        "stored_brands": stored_brands,
+        "stored_asset_details": stored_asset_details,
         "tasks": tasks,
         "upcoming_occurrences": upcoming_occurrences,
         "logs": logs,
