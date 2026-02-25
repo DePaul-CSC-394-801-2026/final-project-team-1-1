@@ -202,6 +202,9 @@ def dashboard_view(request):
             else:
                 room.delete()
                 messages.success(request, "Room was deleted.")
+        #Sort by room
+        elif action == "sort-room":
+            room_id = request.POST.get('room_id')
 
         elif action == "delete-asset":
             asset_id = request.POST.get('asset_id')
@@ -213,11 +216,63 @@ def dashboard_view(request):
                 messages.success(request, "Asset was deleted")
 
         #Todo, add filtering implementation. Will need to be handled/returned here. I had the thought above but im tired
+            #Get all assets/tasks that belong to rooms owned by the user
+            assets = Asset.objects.filter(room__user=user).filter(room=room_id)
+            tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)).filter(room=room_id)
+
+            #Will need to order by due date
+            logs = Log.objects.filter(task__in=tasks)
+            #Generate upcoming occurrences
+            upcoming_occurrences = build_upcoming_occurrences(tasks)
+
+            context = {
+                "rooms": rooms_qs,
+                "selected_room": selected_room,
+                "selected_room_id": selected_room_id,
+                "assets": assets,
+                "tasks": tasks,
+                "upcoming_occurrences": upcoming_occurrences,
+                "logs": logs,
+                "asset_choices": Asset.objects.filter(room__user=user),
+                "task_choices": Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)),
+                "interval_choices": Task.INTERVAL_CHOICES,
+                "category_choices": CATEGORY_CHOICES,
+            }
+            return render(request, "dashboard.html", context)
+        #Sort by asset
+        elif action == "sort-asset":
+            asset_id = request.POST.get('asset_id')
+
+            #Get all assets/tasks that belong to rooms owned by the user
+            assets = Asset.objects.filter(room__user=user)
+            tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)).filter(asset=asset_id)
+
+            #Will need to order by due date
+            logs = Log.objects.filter(task__in=tasks)
+            #Generate upcoming occurrences
+            upcoming_occurrences = build_upcoming_occurrences(tasks)
+
+            context = {
+                "rooms": rooms_qs,
+                "selected_room": selected_room,
+                "selected_room_id": selected_room_id,
+                "assets": assets,
+                "tasks": tasks,
+                "upcoming_occurrences": upcoming_occurrences,
+                "logs": logs,
+                "asset_choices": Asset.objects.filter(room__user=user),
+                "task_choices": Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)),
+                "interval_choices": Task.INTERVAL_CHOICES,
+                "category_choices": CATEGORY_CHOICES,
+            }
+            return render(request, "dashboard.html", context)
+        
         return redirect("dashboard")
 
     #Get all assets/tasks that belong to rooms owned by the user
     assets = Asset.objects.filter(room__user=user)
     tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user))
+
 
     #Will need to order by due date
     logs = Log.objects.filter(task__in=tasks)
