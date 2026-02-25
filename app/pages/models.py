@@ -60,14 +60,14 @@ class Room(models.Model):
 class Asset(models.Model):
     asset_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     details = models.ForeignKey(AssetDetails,on_delete=models.CASCADE, related_name="assets")
-    name = models.CharField(max_length=64)
-    brand = models.CharField(max_length=64, blank=True) # THIS USED AS MANUFACTURER. Could eventually be a constanstant as the other choices above are or something.
-    model_number = models.CharField(max_length=64, blank=True)
+    #name = models.CharField(max_length=64)
+    #brand = models.CharField(max_length=64, blank=True) # THIS USED AS MANUFACTURER. Could eventually be a constanstant as the other choices above are or something.
+    #model_number = models.CharField(max_length=64, blank=True)
     category = models.CharField(max_length=32, choices=CATEGORY_CHOICES, default="general")
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="assets")
 
     def __str__(self):
-        return f"{self.name} ({self.room.name})"
+        return f"{self.details.name} ({self.room.name})"
 
 
 # This splits the data of an asset into a new model
@@ -79,6 +79,7 @@ class AssetDetails(models.Model):
 
     # This will be null for Assets not created by a user
     owner = models.ForeignKey(AppUser, null=True, blank=True, on_delete=models.CASCADE, related_name="custom_asset_details")
+
 
 # The task id is a uuid that is automatically generated on creation
 # The task is matched to the particular asset, when the asset is deleted, the task is deleted
@@ -115,13 +116,13 @@ class Task(models.Model):
 class Consumable(models.Model):
     consumable_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     details = models.ForeignKey(AssetDetails,on_delete=models.CASCADE, related_name="consumables")
-    part_number = models.CharField(max_length=64, blank=True)
-    estimated_cost = models.DecimalField(max_digits=9, decimal_places=2, default=0, blank=True)
-    retail_url = models.URLField(blank=True)
+    #part_number = models.CharField(max_length=64, blank=True)
+    #estimated_cost = models.DecimalField(max_digits=9, decimal_places=2, default=0, blank=True)
+    #retail_url = models.URLField(blank=True)
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="consumables")
 
     def __str__(self):
-        return self.part_number or self.task.name
+        return self.details.part_number or self.task.name
 
 # Details for a consumable. Allows for  
 class ConsumableDetails(models.Model):
