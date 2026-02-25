@@ -1,4 +1,20 @@
 {% extends 'base.html' %}
+
+{% for task in tasks %}
+  {% if task.days_until_due != None && task.days_until_due <= 4 %}
+    <div class = "bg-red-500 text-white p-4 rounded-lg flex"> 
+      <div>
+        <span class = "font-bold uppercase tracking-wider">Urgent</span>
+        {{ task.name }} is due in {{task.days_until_due}} days!
+      </div>
+      <a href = "" class = "">
+
+    </div>
+  {% endif%}
+{% endfor %}
+
+
+
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-5">
   <header class="border-b pb-4">

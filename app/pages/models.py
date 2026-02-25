@@ -2,6 +2,7 @@ import uuid
 
 from django.core.validators import MinLengthValidator
 from django.db import models
+from datetime import date
 
 #Left, is what is stored, I capitalized the right to be pretty
 INTERVAL_CHOICES = [
@@ -81,6 +82,15 @@ class Task(models.Model):
     #completed = models.BooleanField(default=False)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
+
+    
+#Calculating the number of days between today and next due date
+    @property
+    def days_until_due(self):
+        if not self.next_due_date:
+            return None
+        delta = self.next_due_date - date.today()
+        return delta.days
 
     def __str__(self):
         location = self.asset.name if self.asset else self.room.name if self.room else "general"
