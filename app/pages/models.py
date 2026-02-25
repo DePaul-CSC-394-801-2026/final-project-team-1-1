@@ -59,6 +59,7 @@ class Room(models.Model):
 # When room is deleted, assets in that room are deleted
 class Asset(models.Model):
     asset_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    details = models.ForeignKey(AssetDetails,on_delete=models.CASCADE, related_name="assets")
     name = models.CharField(max_length=64)
     brand = models.CharField(max_length=64, blank=True) # THIS USED AS MANUFACTURER. Could eventually be a constanstant as the other choices above are or something.
     model_number = models.CharField(max_length=64, blank=True)
@@ -67,6 +68,17 @@ class Asset(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.room.name})"
+
+
+# This splits the data of an asset into a new model
+# This allows the original Asset to refer to 
+class AssetDetails(models.Model):
+    name = models.CharField(max_length=64)
+    brand = models.CharField(max_length=64, blank=True)
+    model_number = models.CharField(max_length=64, blank=True)
+
+    # This will be null for Assets not created by a user
+    owner = models.ForeignKey(AppUser, null=True, blank=True, on_delete=models.CASCADE, related_name="custom_asset_details")
 
 # The task id is a uuid that is automatically generated on creation
 # The task is matched to the particular asset, when the asset is deleted, the task is deleted
@@ -102,6 +114,7 @@ class Task(models.Model):
 # The estimated cost is optional, but if it is present, it will be displayed in the admin page
 class Consumable(models.Model):
     consumable_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    details = models.ForeignKey(AssetDetails,on_delete=models.CASCADE, related_name="consumables")
     part_number = models.CharField(max_length=64, blank=True)
     estimated_cost = models.DecimalField(max_digits=9, decimal_places=2, default=0, blank=True)
     retail_url = models.URLField(blank=True)
@@ -109,6 +122,15 @@ class Consumable(models.Model):
 
     def __str__(self):
         return self.part_number or self.task.name
+
+# Details for a consumable. Allows for  
+class ConsumableDetails(models.Model):
+    part_number = models.CharField(max_length=64, blank=True)
+    estimated_cost = models.DecimalField(max_digits=9, decimal_places=2, default=0, blank=True)
+    retail_url = models.URLField(blank=True)
+
+    # Null for consumable details not made by a user
+    owner = models.ForeignKey(AppUser, null=True, blank=True, on_delete=models.CASCADE, related_name="custom_consumable_details")
 
 # The log id is a uuid that is automatically generated on creation
 # The log is matched to the particular task, when the task is deleted, the log is deleted
