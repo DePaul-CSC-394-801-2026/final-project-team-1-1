@@ -252,7 +252,7 @@
         {#Model Selector#}
         <select name="asset_model_number" id="modelSelect" class="w-full border px-2 py-1" required>
           <option value="">Select Model Number</option>
-          {% for item in asset_details %}
+          {% for item in stored_asset_details %}
           <option value="{{ item.model_number }}" data-brand="{{ item.brand }}" data-name="{{ item.name }}">{{ item.model_number }}</option>
           {% endfor %}
         </select>
@@ -386,6 +386,49 @@
       storedSection.classList.add("hidden");
       customSection.classList.remove("hidden");
     });
+</script>
+<script>
+  const brandSelect = document.getElementById('brandSelect');
+  const nameSelect = document.getElementById('nameSelect');
+  const modelSelect = document.getElementById('modelSelect');
+
+  const names = Array.from(nameSelect.options).slice(1);
+  const models = Array.from(modelSelect.options).slice(1);
+
+  function filterNames() {
+    const selectedBrand = brandSelect.value;
+
+    nameSelect.innerHTML = '<option value="">Select Name</option>';
+    modelSelect.innerHTML = '<option value="">Select Model Number</option>';
+
+    names.forEach(opt => {
+      if (!selectedBrand || opt.dataset.brand === selectedBrand) {
+        nameSelect.appendChild(opt.cloneNode(true));
+      }
+    });
+
+    nameSelect.value = '';
+  }
+
+  function filterModels() {
+    const selectedBrand = brandSelect.value;
+    const selectedName = nameSelect.value;
+
+    modelSelect.innerHTML = '<option value="">Select Model Number</option>';
+
+    models.forEach(opt => {
+      const brandMatch = !selectedBrand || opt.dataset.brand === selectedBrand;
+      const nameMatch = !selectedName || opt.dataset.name === selectedName;
+      if (brandMatch && nameMatch) {
+        modelSelect.appendChild(opt.cloneNode(true));
+      }
+    });
+
+    modelSelect.value = '';
+  }
+
+  brandSelect.addEventListener('change', filterNames);
+  nameSelect.addEventListener('change', filterModels);
 </script>
 </div>
 {% endblock %}
