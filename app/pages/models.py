@@ -63,6 +63,10 @@ class AssetDetails(models.Model):
     # This will be null for Assets not created by a user
     owner = models.ForeignKey(AppUser, null=True, blank=True, on_delete=models.CASCADE, related_name="custom_asset_details")
 
+    #for admin/shell
+    def __str__(self):
+        return f"{self.name} ({self.brand})" if self.brand else self.name
+
 # I did the same uuid pk as the room
 # There is also a foreign key to the room, so that we can track which room the asset is in to make sure it appears correctly
 # I set arbitrary max length for name and brand fields
@@ -121,14 +125,16 @@ class Task(models.Model):
 # The estimated cost is optional, but if it is present, it will be displayed in the admin page
 class Consumable(models.Model):
     consumable_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    details = models.ForeignKey(AssetDetails,on_delete=models.CASCADE, related_name="consumables", null=True)
+    details = models.ForeignKey('ConsumableDetails',on_delete=models.CASCADE, related_name="consumables", null=True)
     #part_number = models.CharField(max_length=64, blank=True)
     #estimated_cost = models.DecimalField(max_digits=9, decimal_places=2, default=0, blank=True)
     #retail_url = models.URLField(blank=True)
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="consumables")
 
     def __str__(self):
-        return self.details.part_number or self.task.name
+        if self.details and self.details.part_number:
+            return self.details.part_number
+        return f"Consumable for {self.task.name}"
 
 # Details for a consumable. Allows for  
 class ConsumableDetails(models.Model):
@@ -138,6 +144,9 @@ class ConsumableDetails(models.Model):
 
     # Null for consumable details not made by a user
     owner = models.ForeignKey(AppUser, null=True, blank=True, on_delete=models.CASCADE, related_name="custom_consumable_details")
+
+    def __str__(self):
+        return self.part_number or "Unnamed Consumable"
 
 # The log id is a uuid that is automatically generated on creation
 # The log is matched to the particular task, when the task is deleted, the log is deleted
