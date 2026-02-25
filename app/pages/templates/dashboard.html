@@ -181,7 +181,6 @@
                 <span class="text-[10px] block mt-1">{{ entry.task.days_until_due }} days left</span>
                 {% endif %}
               </div>
-      
             </li>
           {% endfor %}
         </ul>
@@ -314,8 +313,8 @@
       <p class="text-sm ">Add task</p>
     <div class="border-b space-y-2 pb-2">
         <input name="task_name" placeholder="Task name (e.g., change air filter)" class="w-full border px-2 py-1" required>
-        <select name="task_interval" class="w-full border px-2 py-1" required title="Select how often this task recurs">
-            <option value="">Choose an interval</option>
+        <select name="task_interval" class="w-full border px-2 py-1" title="Select how often this task recurs (optional)">
+            <option value="">One-time</option>
             {% for value, label in interval_choices %}
                 <option value="{{ value }}">{{ label }}</option>
             {% endfor %}
