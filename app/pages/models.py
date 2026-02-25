@@ -69,7 +69,7 @@ class AssetDetails(models.Model):
 # When room is deleted, assets in that room are deleted
 class Asset(models.Model):
     asset_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    details = models.ForeignKey(AssetDetails,on_delete=models.CASCADE, related_name="assets")
+    details = models.ForeignKey(AssetDetails,on_delete=models.CASCADE, related_name="assets", null=True)
     #name = models.CharField(max_length=64)
     #brand = models.CharField(max_length=64, blank=True) # THIS USED AS MANUFACTURER. Could eventually be a constanstant as the other choices above are or something.
     #model_number = models.CharField(max_length=64, blank=True)
@@ -113,7 +113,7 @@ class Task(models.Model):
 # The estimated cost is optional, but if it is present, it will be displayed in the admin page
 class Consumable(models.Model):
     consumable_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    details = models.ForeignKey(AssetDetails,on_delete=models.CASCADE, related_name="consumables")
+    details = models.ForeignKey(AssetDetails,on_delete=models.CASCADE, related_name="consumables", null=True)
     #part_number = models.CharField(max_length=64, blank=True)
     #estimated_cost = models.DecimalField(max_digits=9, decimal_places=2, default=0, blank=True)
     #retail_url = models.URLField(blank=True)
