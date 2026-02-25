@@ -3,21 +3,21 @@
 <div class="max-w-5xl mx-auto space-y-5">
   <header class="border-b pb-4">
     <h1 class="text-2xl text-black">Dashboard</h1>
-    <p class="text-md text-black">Heyyyyyyyyyy, {{ request.session.username }}.</p>
+    <p class="text-md text-black">Welcome, {{ request.session.username }}.</p>
   </header>
     {#Global stats#}
   <section class="grid grid-cols-3 gap-4">
-    <div class="border rounded p-3 bg-black text-white">
-      <p class="text-xs uppercase text-gray-300">Rooms</p>
+    <div class="border rounded p-3 bg-[#dbf3fa] text-black">
+      <p class="text-xs uppercase text-black">Rooms</p>
       <p class="text-3xl font-bold">{{ rooms.count }}</p>
-      <p class="text-sm text-gray-300">total</p>
+      <p class="text-sm text-black">total</p>
     </div>
-    <div class="border rounded p-3 bg-black">
+    <div class="border rounded p-3 bg-white">
       <p class="text-xs uppercase text-gray-300">Assets</p>
       <p class="text-3xl font-bold">{{ assets.count }}</p>
       <p class="text-sm text-gray-300">in view</p>
     </div>
-    <div class="border rounded p-3 bg-black">
+    <div class="border rounded p-3 bg-white">
       <p class="text-xs uppercase text-gray-300">Tasks</p>
       <p class="text-3xl font-bold">{{ tasks.count }}</p>
       <p class="text-sm text-gray-300">linked to these rooms</p>
@@ -26,7 +26,7 @@
 
     {#Room n assets overview#}
   <section class="grid gap-4 grid-cols-2">
-    <div class="border rounded bg-black p-4">
+    <div class="border rounded bg-white p-4">
       <p class="text-md mb-2">Room list</p>
       {% if rooms %}
         <ul class="space-y-1 max-h-64 overflow-y-auto text-sm">
@@ -53,7 +53,7 @@
         <p class="text-xs">No rooms yet.</p>
       {% endif %}
     </div>
-    <div class="border rounded bg-black p-4">
+    <div class="border rounded bg-white p-4">
       <p class="text-md mb-2">Assets</p>
       {% if assets %}
         <ul class="space-y-1 text-sm max-h-64 overflow-y-auto">
@@ -86,7 +86,7 @@
 
     {#Tasks and due soon section#}
   <section class="grid gap-4 grid-cols-2">
-    <div class="border rounded bg-black p-4">
+    <div class="border rounded bg-white p-4">
       <p class="text-sm mb-2">Tasks</p>
       {% if tasks %}
 {#          Overflow turns the area into scroll once content taks up max height#}
@@ -106,7 +106,7 @@
         <p class="text-xs text-gray-300">Add a task to track maintenance or chores.</p>
       {% endif %}
     </div>
-    <div class="border rounded bg-black p-4">
+    <div class="border rounded bg-white p-4">
       <p class="text-sm  mb-2">Due soon</p>
       {% if upcoming_occurrences %}
         <ul class="space-y-2 text-sm max-h-64 overflow-y-auto pr-2">
@@ -127,7 +127,7 @@
   </section>
 
     {#Activity log secton. Takes up full width when max not specified#}
-  <section class="border rounded bg-black p-4">
+  <section class="border rounded bg-white p-4">
     <p class="text-sm mb-2">Activity log</p>
     {% if logs %}
       <ul class="space-y-2 max-h-64 overflow-y-auto text-sm">
@@ -153,7 +153,7 @@
 
   {#Add room  & asset section#}
   <section class="grid gap-4 md:grid-cols-2">
-    <form method="post" class="border rounded bg-black p-4 space-y-2">
+    <form method="post" class="border rounded bg-white p-4 space-y-2">
       {% csrf_token %}
         {#These inputs tell our backend what actions to perform and which room view to return after submission#}
       <input type="hidden" name="action" value="add-room">
