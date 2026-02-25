@@ -53,6 +53,16 @@ class Room(models.Model):
     def __str__(self):
         return f"{self.name} ({self.user.username})"
 
+# This splits the data of an asset into a new model
+# This allows the original Asset to refer to 
+class AssetDetails(models.Model):
+    name = models.CharField(max_length=64)
+    brand = models.CharField(max_length=64, blank=True)
+    model_number = models.CharField(max_length=64, blank=True)
+
+    # This will be null for Assets not created by a user
+    owner = models.ForeignKey(AppUser, null=True, blank=True, on_delete=models.CASCADE, related_name="custom_asset_details")
+
 # I did the same uuid pk as the room
 # There is also a foreign key to the room, so that we can track which room the asset is in to make sure it appears correctly
 # I set arbitrary max length for name and brand fields
@@ -68,18 +78,6 @@ class Asset(models.Model):
 
     def __str__(self):
         return f"{self.details.name} ({self.room.name})"
-
-
-# This splits the data of an asset into a new model
-# This allows the original Asset to refer to 
-class AssetDetails(models.Model):
-    name = models.CharField(max_length=64)
-    brand = models.CharField(max_length=64, blank=True)
-    model_number = models.CharField(max_length=64, blank=True)
-
-    # This will be null for Assets not created by a user
-    owner = models.ForeignKey(AppUser, null=True, blank=True, on_delete=models.CASCADE, related_name="custom_asset_details")
-
 
 # The task id is a uuid that is automatically generated on creation
 # The task is matched to the particular asset, when the asset is deleted, the task is deleted

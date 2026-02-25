@@ -87,10 +87,10 @@
             {#last makes sure that the last item does not get the styling#}
             <li class=" flex justify-between items-start border-zinc-400 border-b pb-2 last:border-none">
               <div>
-                <div class="font-medium text-black">{{ asset.name }}</div>
+                <div class="font-medium text-black">{{ asset.details.name }}</div>
                 <div class="text-xs text-black">
-                  {% if asset.brand %}
-                    {{ asset.brand }}
+                  {% if asset.details.brand %}
+                    {{ asset.details.brand }}
                   {% else %}
                     Unknown
                   {% endif %}
@@ -144,7 +144,7 @@
           {% for task in tasks %}
             <li class="border-b pb-2 last:border-none">
               <div class="font-medium">{{ task.name }}</div>
-              <div class="text-xs text-black">Location: {% if task.asset %}{{ task.asset.name }}{% elif task.room %}{{ task.room.name }}{% else %}General{% endif %}</div>
+              <div class="text-xs text-black">Location: {% if task.asset %}{{ task.asset.details.name }}{% elif task.room %}{{ task.room.name }}{% else %}General{% endif %}</div>
               <div class="text-xs text-black">
                 Interval: {% if task.interval %}{{ task.get_interval_display }}{% else %}Not set{% endif %}
               </div>
@@ -164,7 +164,7 @@
             <li class="border-b pb-2 last:border-none flex justify-between items-start text-black">
               <div>
                 <div class="font-medium">{{ entry.task.name }}</div>
-                <div class="text-xs text-gray-800">Assigned: {% if entry.task.asset %}{{ entry.task.asset.name }}{% elif entry.task.room %}{{ entry.task.room.name }}{% else %}General{% endif %}</div>
+                <div class="text-xs text-gray-800">Assigned: {% if entry.task.asset %}{{ entry.task.asset.details.name }}{% elif entry.task.room %}{{ entry.task.room.name }}{% else %}General{% endif %}</div>
                 <div class="text-xs text-gray-800">
                   Next due: {% if entry.due_date %}{{ entry.due_date|date:"M. d, Y" }}{% else %}TBD{% endif %}
                 </div>
@@ -284,7 +284,7 @@
       <select name="task_asset" class="w-full border px-2 py-1">
         <option value="">Asset (optional)</option>
         {% for asset in asset_choices %}
-          <option value="{{ asset.asset_id }}">{{ asset.name }}</option>
+          <option value="{{ asset.asset_id }}">{{ asset.details.name }}</option>
         {% endfor %}
       </select>
       <button type="submit" class="border px-3 py-1">Save</button>
