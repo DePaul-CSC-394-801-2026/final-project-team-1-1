@@ -2,7 +2,7 @@
 
 {% for task in tasks %}
   {% if task.days_until_due != None and task.days_until_due <= 4 %}
-    <div class = "bg-red-500 text-white p-4 rounded-lg flex"> 
+    <div class = "bg-red-500 text-black p-4 rounded-lg flex border border-black"> 
       <div>
         <span class = "font-bold uppercase tracking-wider">Urgent</span>
         {{ task.name }} is due in {{task.days_until_due}} days!
@@ -17,7 +17,7 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-5">
-  <header class="border-b pb-4">
+  <header class="border-b border-black pb-4">
     <h1 class="text-2xl text-black">Dashboard</h1>
     <p class="text-md text-black">Welcome, {{ request.session.username }}.</p>
   </header>
@@ -28,21 +28,21 @@
       <p class="text-3xl font-bold">{{ rooms.count }}</p>
       <p class="text-sm text-black">total</p>
     </div>
-    <div class="border rounded p-3 bg-[#dbf3fa]">
+    <div class="border text-black rounded p-3 bg-[#dbf3fa]">
       <p class="text-xs uppercase text-black">Assets</p>
-      <p class="text-3xl font-bold">{{ assets.count }}</p>
+      <p class="text-3xl font-bold text-black">{{ assets.count }}</p>
       <p class="text-sm text-black">in view</p>
     </div>
-    <div class="border rounded p-3 bg-[#dbf3fa]">
-      <p class="text-xs uppercase text-black">Tasks</p>
-      <p class="text-3xl font-bold">{{ tasks.count }}</p>
-      <p class="text-sm text-black">linked to these rooms</p>
+    <div class="border text-black rounded p-3 bg-[#dbf3fa]">
+      <p class="text-xs uppercase ">Tasks</p>
+      <p class="text-3xl font-bold ">{{ tasks.count }}</p>
+      <p class="text-sm ">linked to these rooms</p>
     </div>
   </section>
 
     {#Room n assets overview#}
-  <section class="grid gap-4 grid-cols-2">
-    <div class="border rounded bg-[#dbf3fa] p-4">
+  <section class="grid text-black gap-4 grid-cols-2">
+    <div class="border text-black rounded bg-[#dbf3fa] p-4">
       <p class="text-md mb-2">Room list</p>
       {% if rooms %}
         <ul class="space-y-1 max-h-64 overflow-y-auto text-sm">
@@ -85,7 +85,7 @@
         <ul class="space-y-1 text-sm max-h-64 overflow-y-auto">
           {% for asset in assets %}
             {#last makes sure that the last item does not get the styling#}
-            <li class=" flex justify-between items-start border-zinc-400 border-b pb-2 last:border-none">
+            <li class=" text-black flex justify-between items-start border-zinc-400 border-b pb-2 last:border-none">
               <div>
                 <div class="font-medium text-black">{{ asset.details.name }}</div>
                 <div class="text-xs text-black">
@@ -135,7 +135,7 @@
   </section>
 
     {#Tasks and due soon section#}
-  <section class="grid gap-4 grid-cols-2">
+  <section class="grid text-black gap-4 grid-cols-2">
     <div class="border rounded bg-[#dbf3fa] p-4">
       <p class="text-sm mb-2">Tasks</p>
       {% if tasks %}
@@ -164,8 +164,8 @@
             <li class="border-b pb-2 last:border-none flex justify-between items-start text-black">
               <div>
                 <div class="font-medium">{{ entry.task.name }}</div>
-                <div class="text-xs text-gray-800">Assigned: {% if entry.task.asset %}{{ entry.task.asset.details.name }}{% elif entry.task.room %}{{ entry.task.room.name }}{% else %}General{% endif %}</div>
-                <div class="text-xs text-gray-800">
+                <div class="text-xs text-black">Assigned: {% if entry.task.asset %}{{ entry.task.asset.details.name }}{% elif entry.task.room %}{{ entry.task.room.name }}{% else %}General{% endif %}</div>
+                <div class="text-xs text-black">
                   Next due: {% if entry.due_date %}{{ entry.due_date|date:"M. d, Y" }}{% else %}TBD{% endif %}
                 </div>
               </div>
@@ -186,13 +186,13 @@
           {% endfor %}
         </ul>
       {% else %}
-        <p class="text-xs text-gray-800">Tasks become due after they are added here.</p>
+        <p class="text-xs text-black">Tasks become due after they are added here.</p>
       {% endif %}
     </div>
   </section>
 
     {#Activity log secton. Takes up full width when max not specified#}
-  <section class="border rounded bg-[#dbf3fa] p-4">
+  <section class="text-black border rounded bg-[#dbf3fa] p-4">
     <p class="text-sm mb-2">Activity log</p>
     {% if logs %}
       <ul class="space-y-2 max-h-64 overflow-y-auto text-sm">
@@ -217,7 +217,7 @@
   </section>
 
   {#Add room  & asset section#}
-  <section class="grid gap-4 md:grid-cols-2">
+  <section class="text-black grid gap-4 md:grid-cols-2">
     <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
       {% csrf_token %}
         {#These inputs tell our backend what actions to perform and which room view to return after submission#}
@@ -306,7 +306,7 @@
   </section>
 
     {#Add task & log section. It is basically just a copy paste of the asset but for logs and tasks#}
-  <section class="grid gap-4 md:grid-cols-2">
+  <section class="text-black grid gap-4 md:grid-cols-2">
     <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
       {% csrf_token %}
       <input type="hidden" name="action" value="add-task">
@@ -321,7 +321,7 @@
             {% endfor %}
         </select>
         <input type="date" name="task_start_date" placeholder="First due date" class="w-full border px-2 py-1" required>
-        <p class="text-xs text-gray-400">Select the first due date</p>
+        <p class="text-xs text-black">Select the first due date</p>
     </div>
 
       <select name="task_room" class="w-full border px-2 py-1">
@@ -351,7 +351,7 @@
             {% endfor %}
         </select>
         <input type="date" name="log_completion_date" class="w-full border px-2 py-1">
-        <p class="text-xs text-gray-400">Completion date (optional)</p>
+        <p class="text-xs text-black">Completion date (optional)</p>
     </div>
 
       <input name="log_cost" placeholder="Cost" class="w-full border px-2 py-1">
