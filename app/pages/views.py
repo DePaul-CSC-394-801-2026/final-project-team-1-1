@@ -108,6 +108,26 @@ def dashboard_view(request):
                 messages.success(request, "Room added for you to organize.")
             else:
                 messages.error(request, "Room name is required.")
+        
+        #Adding a stored asset
+        elif action == "add-asset":
+            name = request.POST.get("asset_name", "").strip()
+            brand = request.POST.get("asset_brand", "").strip()
+            category = request.POST.get("asset_category", "general").strip()
+            model_number = request.POST.get("asset_model_number", "").strip()
+            room_id = request.POST.get("asset_room")
+            room = None
+            if room_id:
+                room = rooms_qs.filter(room_id=room_id).first()
+            if not room:
+                room = selected_room or rooms_qs.first()
+            if not room:
+                messages.error(request, "Create a room first to place assets.")
+            elif not name:
+                messages.error(request, "Asset name is required.")
+            else:
+                details = AssetDetails.objects.get(brand=brand, name=name, model_number=model_number)
+                Asset.objects.create(details=details, category=category, room=room)
 
         # If the action is to add a custom asset, get the mandatory asset name, optional brand, optional category and room from the form else throw an error
         elif action == "add-custom-asset":

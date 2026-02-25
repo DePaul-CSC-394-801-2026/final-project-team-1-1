@@ -232,25 +232,25 @@
     <div id="storedAssetSection" class="space-y-2">
       <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
         {% csrf_token %}
-        <input type="hidden" name="action" value="add-custom-asset">
+        <input type="hidden" name="action" value="add-asset">
         <input type="hidden" name="return_room" value="{{ selected_room_id }}">
         <p class="text-sm ">Add asset</p>
         {#Brand Selector#}
-        <select name="brand" id="brandSelect" class="w-full border px-2 py-1" required>
+        <select name="asset_brand" id="brandSelect" class="w-full border px-2 py-1" required>
           <option value="">Select Brand</option>
           {% for brand in brands %}
             <option value="{{ brand }}">{{ brand }}</option>
           {% endfor %}
         </select>
         {#Name Selector#}
-        <select name="name" id="nameSelect" class="w-full border px-2 py-1" required>
+        <select name="asset_name" id="nameSelect" class="w-full border px-2 py-1" required>
           <option value="">Select Name</option>
           {% for asset in stored_asset_details %}
             <option value="{{ asset.name }}" data-brand="{{ asset.brand }}">{{ asset.name }}</option>
           {% endfor %}
         </select>
         {#Model Selector#}
-        <select name="model_number" id="modelSelect" class="w-full border px-2 py-1" required>
+        <select name="asset_model_number" id="modelSelect" class="w-full border px-2 py-1" required>
           <option value="">Select Model Number</option>
           {% for item in asset_details %}
           <option value="{{ item.model_number }}" data-brand="{{ item.brand }}" data-name="{{ item.name }}">{{ item.model_number }}</option>
@@ -374,7 +374,6 @@
     const storedSection = document.getElementById("storedAssetSection");
     const customSection = document.getElementById("customAssetSection");
 
-    // Default state
     customSection.classList.add("hidden");
     storedSection.classList.remove("hidden");
 
@@ -394,7 +393,6 @@
   const nameSelect = document.getElementById("nameSelect");
   const modelSelect = document.getElementById("modelSelect");
 
-  // Helper function to filter
   function filterOptions(selectElement, filterFunc) {
     for (const option of selectEl.options) {
       if (!option.value) continue;
@@ -403,7 +401,6 @@
     selectEl.selectedIndex = 0;
   }
 
-  // Filter upon update of brand
   brandSelect.addEventListener("change", function() {
     const selectedBrand = brandSelect.value;
 
@@ -411,7 +408,6 @@
     filterOptions(modelSelect, option => option.dataset.brand === selectedBrand);
   });
 
-  // Filter upon update of name
   nameSelect.addEventListener("change", function() {
     const selectedBrand = brandSelect.value;
     const selectedName = nameSelect.value;
