@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% for task in tasks %}
-  {% if task.days_until_due != None && task.days_until_due <= 4 %}
+  {% if task.days_until_due != None and task.days_until_due <= 4 %}
     <div class = "bg-red-500 text-white p-4 rounded-lg flex"> 
       <div>
         <span class = "font-bold uppercase tracking-wider">Urgent</span>
@@ -136,11 +136,13 @@
       {% if upcoming_occurrences %}
         <ul class="space-y-2 text-sm max-h-64 overflow-y-auto pr-2">
           {% for entry in upcoming_occurrences %}
-            <li class="border-b pb-2 last:border-none">
-              <div class="font-medium">{{ entry.task.name }}</div>
-              <div class="text-xs text-gray-800">Assigned: {% if entry.task.asset %}{{ entry.task.asset.name }}{% elif entry.task.room %}{{ entry.task.room.name }}{% else %}General{% endif %}</div>
-              <div class="text-xs text-gray-800">
-                Next due: {% if entry.due_date %}{{ entry.due_date }}{% else %}TBD{% endif %}
+            <li class="border-b pb-2 last:border-none flex justify-between items-start text-black">
+              <div>
+                <div class="font-medium">{{ entry.task.name }}</div>
+                <div class="text-xs text-gray-800">Assigned: {% if entry.task.asset %}{{ entry.task.asset.name }}{% elif entry.task.room %}{{ entry.task.room.name }}{% else %}General{% endif %}</div>
+                <div class="text-xs text-gray-800">
+                  Next due: {% if entry.due_date %}{{ entry.due_date|date: "M. d, Y" }}{% else %}TBD{% endif %}
+                </div>
               </div>
             </li>
           {% endfor %}
