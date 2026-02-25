@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
@@ -10,7 +10,7 @@ from .models import AppUser, Asset, AssetDetails, Log, Room, Task, INTERVAL_DAY_
 # generates 3 duplicate occurrences of a particular task and return them to add them to the context displayed on the dashboard
 def build_upcoming_occurrences(tasks, duplicates=3):
     occurrences = []
-    upcoming_tasks = tasks.order_by("next_due_date")
+    upcoming_tasks = tasks.filter(next_due_date__isnull=False).order_by("next_due_date")
     for task in upcoming_tasks:
         due_date = task.next_due_date
         for i in range(duplicates):
@@ -23,7 +23,12 @@ def build_upcoming_occurrences(tasks, duplicates=3):
 
 #Calculate next due date from interval and start date. Could probably refactor this out.
 def compute_next_due_date(interval, start_date):
+    #if task is not recurring.
+    if not interval:
+        return start_date
     days = INTERVAL_DAY_MAP.get(interval)
+    if days is None:
+        return start_date
     return start_date + timedelta(days=days)
 
 
@@ -160,8 +165,8 @@ def dashboard_view(request):
             room_id = request.POST.get("task_room")
 
             # If somehow the request goes through without required data expose error
-            if not name or not interval or not start_date_value:
-                messages.error(request, "Task name, interval, and start date are required.")
+            if not name or not start_date_value:
+                messages.error(request, "Task name and start date are required.")
             else:
                 # converts string into datetime object and extracts just the date, not the time
                 start_date = datetime.fromisoformat(start_date_value).date()
@@ -173,14 +178,18 @@ def dashboard_view(request):
                     messages.error(request, "Create or choose a room/asset before adding a task.")
                 else:
                     #Create task
-                    next_due = compute_next_due_date(interval, start_date)
+                    next_due = start_date
+                    last_completed = None
+                    if interval:
+                        next_due = compute_next_due_date(interval, start_date)
+                        last_completed = start_date
 
                     Task.objects.create(
                         name=name,
                         interval=interval,
                         asset=asset,
                         room=room,
-                        last_completed_date=start_date,
+                        last_completed_date=last_completed,
                         next_due_date=next_due,
                     )
                     messages.success(request, "Task created successfully.")
@@ -212,7 +221,10 @@ def dashboard_view(request):
                 log = Log.objects.create(task=task, completion_date=completion_date, cost=cost, notes=notes)
                 if log.completion_date:
                     task.last_completed_date = log.completion_date
-                    task.next_due_date = compute_next_due_date(task.interval, log.completion_date)
+                    if task.interval:
+                        task.next_due_date = compute_next_due_date(task.interval, log.completion_date)
+                    else:
+                        task.next_due_date = None
                     task.save(update_fields=["last_completed_date", "next_due_date"])
                 messages.success(request, "Log recorded for task. :)")
         #Delete action        
@@ -237,49 +249,41 @@ def dashboard_view(request):
                 asset.delete()
                 messages.success(request, "Asset was deleted")
 
-        #Todo, add filtering implementation. Will need to be handled/returned here. I had the thought above but im tired
-            #Get all assets/tasks that belong to rooms owned by the user
-            assets = Asset.objects.filter(room__user=user).filter(room=room_id)
-            tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)).filter(room=room_id)
+        elif action == "complete-task":
+            task_id = request.POST.get("task_id")
+            task = Task.objects.filter(
+                Q(room__user=user) | Q(asset__room__user=user)
+            ).filter(task_id=task_id).first()
+            if not task:
+                messages.error(request, "Task was not found")
+            else:
+                completion_date = date.today()
+                Log.objects.create(task=task, completion_date=completion_date)
+                task.last_completed_date = completion_date
+                if task.interval:
+                    task.next_due_date = compute_next_due_date(task.interval, completion_date)
+                else:
+                    task.next_due_date = None
+                task.save(update_fields=["last_completed_date", "next_due_date"])
+                messages.success(request, "Task marked complete.")
 
-            #Will need to order by due date
-            logs = Log.objects.filter(task__in=tasks)
-            #Generate upcoming occurrences
-            upcoming_occurrences = build_upcoming_occurrences(tasks)
-
-            context = {
-                "rooms": rooms_qs,
-                "selected_room": selected_room,
-                "selected_room_id": selected_room_id,
-                "assets": assets,
-                "tasks": tasks,
-                "upcoming_occurrences": upcoming_occurrences,
-                "logs": logs,
-                "asset_choices": Asset.objects.filter(room__user=user),
-                "task_choices": Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)),
-                "interval_choices": Task.INTERVAL_CHOICES,
-                "category_choices": CATEGORY_CHOICES,
-            }
-            return render(request, "dashboard.html", context)
         #Sort by asset
         elif action == "sort-asset":
             asset_id = request.POST.get('asset_id')
 
-            #Get all assets/tasks that belong to rooms owned by the user
             assets = Asset.objects.filter(room__user=user)
-            tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)).filter(asset=asset_id)
+            asset_tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)).filter(asset=asset_id)
+            visible_tasks = asset_tasks.filter(next_due_date__isnull=False)
 
-            #Will need to order by due date
-            logs = Log.objects.filter(task__in=tasks)
-            #Generate upcoming occurrences
-            upcoming_occurrences = build_upcoming_occurrences(tasks)
+            logs = Log.objects.filter(task__in=asset_tasks)
+            upcoming_occurrences = build_upcoming_occurrences(visible_tasks)
 
             context = {
                 "rooms": rooms_qs,
                 "selected_room": selected_room,
                 "selected_room_id": selected_room_id,
                 "assets": assets,
-                "tasks": tasks,
+                "tasks": visible_tasks,
                 "upcoming_occurrences": upcoming_occurrences,
                 "logs": logs,
                 "asset_choices": Asset.objects.filter(room__user=user),
@@ -291,20 +295,15 @@ def dashboard_view(request):
         
         return redirect("dashboard")
 
-    #Get all assets/tasks that belong to rooms owned by the user
     assets = Asset.objects.filter(room__user=user)
-    tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user))
+    all_tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user))
+    active_tasks = all_tasks.filter(next_due_date__isnull=False)
     stored_brands = AssetDetails.objects.filter(owner__isnull=True).values_list('brand', flat=True).distinct().order_by('brand')
     stored_asset_details = AssetDetails.objects.filter(owner__isnull=True)
 
+    logs = Log.objects.filter(task__in=all_tasks)
+    upcoming_occurrences = build_upcoming_occurrences(active_tasks)
 
-
-    #Will need to order by due date
-    logs = Log.objects.filter(task__in=tasks)
-    #Generate upcoming occurrences
-    upcoming_occurrences = build_upcoming_occurrences(tasks)
-
-    #Everything we are passing to the dashboard page is in the context
     context = {
         "rooms": rooms_qs,
         "selected_room": selected_room,
@@ -312,11 +311,11 @@ def dashboard_view(request):
         "assets": assets,
         "stored_brands": stored_brands,
         "stored_asset_details": stored_asset_details,
-        "tasks": tasks,
+        "tasks": active_tasks,
         "upcoming_occurrences": upcoming_occurrences,
         "logs": logs,
         "asset_choices": Asset.objects.filter(room__user=user),
-        "task_choices": Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)),
+        "task_choices": all_tasks,
         "interval_choices": Task.INTERVAL_CHOICES,
         "category_choices": CATEGORY_CHOICES,
     }

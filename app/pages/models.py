@@ -77,7 +77,9 @@ class Asset(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="assets")
 
     def __str__(self):
-        return f"{self.details.name} ({self.room.name})"
+        name = self.details.name if self.details else "Unnamed asset"
+        room_name = self.room.name if self.room else "Unassigned room"
+        return f"{name} ({room_name})"
 
 # The task id is a uuid that is automatically generated on creation
 # The task is matched to the particular asset, when the asset is deleted, the task is deleted
@@ -104,7 +106,13 @@ class Task(models.Model):
         return delta.days
 
     def __str__(self):
-        location = self.asset.name if self.asset else self.room.name if self.room else "general"
+        #Redefine asset name since it is no longer used.
+        asset_name = (
+            self.asset.details.name if self.asset and self.asset.details else None
+        )
+        location = (
+            asset_name if asset_name else self.room.name if self.room else "general"
+        )
         return f"{self.name} ({location})"
 
 # The consumable id is a uuid that is automatically generated on creation
