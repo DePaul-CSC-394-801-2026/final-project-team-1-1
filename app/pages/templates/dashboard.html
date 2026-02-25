@@ -228,32 +228,38 @@
       <textarea name="room_description" placeholder="Description" class="w-full border px-2 py-1" rows="2"></textarea>
       <button type="submit" class="border px-3 py-1">Save</button>
     </form>
-    <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="add-asset">
-      <input type="hidden" name="return_room" value="{{ selected_room_id }}">
-      <p class="text-sm ">Add asset</p>
-        {#Again, these inputs tell our backend what actions to perform and which room view to return after submission#}
-      <input name="asset_name" placeholder="Asset name" class="w-full border px-2 py-1" required>
-      <select name="asset_category" id="categorySelect" class="w-full border px-2 py-1">
-          {% for value, label in category_choices %}
-              <option value="{{ value }}">{{ label }}</option>
+    <div id="storedAssetSection" class="space-y-2">
+      <button type="button" id="customModeBtn" class="border px-3 py-1">Add Your Own</button>
+    </div>
+    <div id="customAssetSection" class="space-y-2 hidden">
+      <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add-asset">
+        <input type="hidden" name="return_room" value="{{ selected_room_id }}">
+        <p class="text-sm ">Add asset</p>
+          {#Again, these inputs tell our backend what actions to perform and which room view to return after submission#}
+        <input name="asset_name" placeholder="Asset name" class="w-full border px-2 py-1" required>
+        <select name="asset_category" id="categorySelect" class="w-full border px-2 py-1">
+            {% for value, label in category_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+          {#This container is encapsulates the conditional fields that are dependen on the categorySelect being Appliance. See script below! :)#}
+          {#None hides the div when the page first loads#}
+        <div id="applianceFields" style="display: none;" class="space-y-2">
+          <input name="asset_brand" placeholder="Brand" class="w-full border px-2 py-1">
+          <input name="asset_model_number" placeholder="Model Number" class="w-full border px-2 py-1">
+        </div>
+        <select name="asset_room" class="w-full border px-2 py-1">
+          <option value="" class="">Select Room</option>
+          {% for room in rooms %}
+            <option value="{{ room.room_id }}">{{ room.name }}</option>
           {% endfor %}
-      </select>
-        {#This container is encapsulates the conditional fields that are dependen on the categorySelect being Appliance. See script below! :)#}
-        {#None hides the div when the page first loads#}
-      <div id="applianceFields" style="display: none;" class="space-y-2">
-        <input name="asset_brand" placeholder="Brand" class="w-full border px-2 py-1">
-        <input name="asset_model_number" placeholder="Model Number" class="w-full border px-2 py-1">
-      </div>
-      <select name="asset_room" class="w-full border px-2 py-1">
-        <option value="" class="">Select Room</option>
-        {% for room in rooms %}
-          <option value="{{ room.room_id }}">{{ room.name }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit" class="border px-3 py-1">Save</button>
-    </form>
+        </select>
+        <button type="submit" class="border px-3 py-1">Save</button>
+        <button type="button" id="storedModeBtn" class="border px-3 py-1">Use a Premade</button>
+      </form>
+    </div>
   </section>
 
     {#Add task & log section. It is basically just a copy paste of the asset but for logs and tasks#}
@@ -318,5 +324,26 @@
         applianceDiv.style.display = this.value === 'appliance' ? 'block' : 'none';
     });
   </script>
+  <script>
+    {#Responsible for switching between stored & custom asset forms#}
+    const storedBtn = document.getElementById("storedModeBtn");
+    const customBtn = document.getElementById("customModeBtn");
+    const storedSection = document.getElementById("storedAssetSection");
+    const customSection = document.getElementById("customAssetSection");
+
+    // Default state
+    customSection.classList.add("hidden");
+    storedSection.classList.remove("hidden");
+
+    storedBtn.addEventListener("click", function () {
+      storedSection.classList.remove("hidden");
+      customSection.classList.add("hidden");
+    });
+
+    customBtn.addEventListener("click", function () {
+      storedSection.classList.add("hidden");
+      customSection.classList.remove("hidden");
+    });
+</script>
 </div>
 {% endblock %}

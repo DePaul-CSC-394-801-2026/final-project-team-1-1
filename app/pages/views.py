@@ -126,7 +126,7 @@ def dashboard_view(request):
             elif not name:
                 messages.error(request, "Asset name is required.")
             else:
-                details = AssetDetails(name=name, brand=brand,model_number=model_number)
+                details = AssetDetails(name=name, brand=brand,model_number=model_number, owner=user)
                 details.save()
                 Asset.objects.create(category=category, details=details, room=room)
                 messages.success(request, "Asset added to the room.")
