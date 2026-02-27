@@ -27,6 +27,16 @@ CATEGORY_CHOICES = [
     ("appliance", "Appliance"),
     ("furniture", "Furniture")
 ]
+
+
+class Home(models.Model):
+    home_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=128)
+    address = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return self.name
+
 # The user will be what ultimately determines what assets are on their dashboard and what tasks they need to do, etc.
 class AppUser(models.Model):
     username = models.CharField(
@@ -36,22 +46,39 @@ class AppUser(models.Model):
     )
     email = models.EmailField(max_length=254)
     password = models.CharField(max_length=128)
+    homes = models.ManyToManyField(
+        "Home",
+        through="HomeUserConnection",
+        related_name="users",
+        blank=True,
+    )
 
     def __str__(self):
         return f"{self.username} ({self.email})"
 
 
+class HomeUserConnection(models.Model):
+    home = models.ForeignKey(Home, on_delete=models.CASCADE, related_name="home_user_connections")
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name="home_user_connections")
+
+    class Meta:
+        unique_together = ("home", "user")
+
+    def __str__(self):
+        return f"{self.user.username} -> {self.home.name}"
+
+
 # The rooms primary id is a uuid that is automatically generated on creation
-# The room is matched to the particular user, when the user is deleted, the room is deleted
+# The room is matched to the particular home, when the home is deleted, the room is deleted
 # I just set the max length to an arbitrary number, but it should be fine for most instances
 class Room(models.Model):
     room_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name="rooms")
+    home = models.ForeignKey(Home, on_delete=models.CASCADE, related_name="rooms")
     name = models.CharField(max_length=64)
     description = models.TextField(blank=True)
 
     def __str__(self):
-        return f"{self.name} ({self.user.username})"
+        return f"{self.name} ({self.home.name})"
 
 # This splits the data of an asset into a new model
 # This allows the original Asset to refer to 
@@ -73,7 +100,8 @@ class AssetDetails(models.Model):
 # When room is deleted, assets in that room are deleted
 class Asset(models.Model):
     asset_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    details = models.ForeignKey(AssetDetails,on_delete=models.CASCADE, related_name="assets", null=True)
+    name = models.CharField(max_length=64)
+    details = models.ForeignKey(AssetDetails, on_delete=models.CASCADE, related_name="assets", null=True, blank=True)
     #name = models.CharField(max_length=64)
     #brand = models.CharField(max_length=64, blank=True) # THIS USED AS MANUFACTURER. Could eventually be a constanstant as the other choices above are or something.
     #model_number = models.CharField(max_length=64, blank=True)
@@ -81,7 +109,7 @@ class Asset(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="assets")
 
     def __str__(self):
-        name = self.details.name if self.details else "Unnamed asset"
+        name = self.name or (self.details.name if self.details else "Unnamed asset")
         room_name = self.room.name if self.room else "Unassigned room"
         return f"{name} ({room_name})"
 
@@ -97,6 +125,7 @@ class Task(models.Model):
     next_due_date = models.DateField(null=True, blank=True)
     last_completed_date = models.DateField(null=True, blank=True)
     #completed = models.BooleanField(default=False)
+    home = models.ForeignKey(Home, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
 
@@ -110,12 +139,12 @@ class Task(models.Model):
         return delta.days
 
     def __str__(self):
-        #Redefine asset name since it is no longer used.
+        # Use the asset name if available for display.
         asset_name = (
-            self.asset.details.name if self.asset and self.asset.details else None
+            self.asset.name if self.asset else None
         )
         location = (
-            asset_name if asset_name else self.room.name if self.room else "general"
+            asset_name if asset_name else self.room.name if self.room else self.home.name if self.home else "general"
         )
         return f"{self.name} ({location})"
 

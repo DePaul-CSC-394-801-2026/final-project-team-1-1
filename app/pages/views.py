@@ -5,7 +5,18 @@ from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import redirect, render
 
-from .models import AppUser, Asset, AssetDetails, Log, Room, Task, INTERVAL_DAY_MAP, CATEGORY_CHOICES
+from .models import (
+    AppUser,
+    Asset,
+    AssetDetails,
+    Home,
+    HomeUserConnection,
+    Log,
+    Room,
+    Task,
+    INTERVAL_DAY_MAP,
+    CATEGORY_CHOICES,
+)
 
 DUE_SOON_LIMIT = 5
 
@@ -20,6 +31,15 @@ def compute_next_due_date(interval, start_date):
     if not days:
         return start_date
     return start_date + timedelta(days=days)
+
+
+def get_current_home(user):
+    home = user.homes.first()
+    if home:
+        return home
+    home = Home.objects.create(name="My Home", address="")
+    HomeUserConnection.objects.create(user=user, home=home)
+    return home
 
 
 # Login view, just like to-do app
@@ -61,7 +81,9 @@ def register_view(request):
             messages.error(request, "That username is already taken.")
             return render(request, "register.html")
 
-        AppUser.objects.create(username=username, password=password, email=email)
+        user = AppUser.objects.create(username=username, password=password, email=email)
+        home = Home.objects.create(name="My Home", address="")
+        HomeUserConnection.objects.create(user=user, home=home)
         messages.success(request, "Account created.")
         return redirect("login")
 
@@ -77,11 +99,13 @@ def dashboard_view(request):
     username = request.session["username"]
     user = AppUser.objects.filter(username=username).first()
 
-    # Fetch rooms for the user
-    rooms_qs = user.rooms.all()
+    home = get_current_home(user)
+
+    # Fetch rooms for the home
+    rooms_qs = Room.objects.filter(home=home)
 
     #Fetch all assets for the user
-    assets_qs = Asset.objects.filter(room__user=user)
+    assets_qs = Asset.objects.filter(room__home=home)
 
     #Initially fetch all rooms. TODO add filtering by room
     selected_room_id = request.GET.get("room", "all")
@@ -99,7 +123,7 @@ def dashboard_view(request):
             name = request.POST.get("room_name", "").strip()
             description = request.POST.get("room_description", "").strip()
             if name:
-                Room.objects.create(user=user, name=name, description=description)
+                Room.objects.create(home=home, name=name, description=description)
                 messages.success(request, "Room added for you to organize.")
             else:
                 messages.error(request, "Room name is required.")
@@ -122,7 +146,7 @@ def dashboard_view(request):
                 messages.error(request, "Asset name is required.")
             else:
                 details = AssetDetails.objects.get(brand=brand, name=name, model_number=model_number)
-                Asset.objects.create(details=details, category=category, room=room)
+                Asset.objects.create(name=name, details=details, category=category, room=room)
 
         # If the action is to add a custom asset, get the mandatory asset name, optional brand, optional category and room from the form else throw an error
         elif action == "add-custom-asset":
@@ -141,9 +165,9 @@ def dashboard_view(request):
             elif not name:
                 messages.error(request, "Asset name is required.")
             else:
-                details = AssetDetails(name=name, brand=brand,model_number=model_number, owner=user)
+                details = AssetDetails(name=name, brand=brand, model_number=model_number, owner=user)
                 details.save()
-                Asset.objects.create(category=category, details=details, room=room)
+                Asset.objects.create(name=name, category=category, details=details, room=room)
                 messages.success(request, "Asset added to the room.")
 
         # If the action is to add a task, get the mandatory task name, optional interval and start date, asset and room from the form else throw an error
@@ -160,25 +184,26 @@ def dashboard_view(request):
             else:
                 # converts string into datetime object and extracts just the date, not the time
                 start_date = datetime.fromisoformat(start_date_value).date()
-                asset = Asset.objects.filter(asset_id=asset_id, room__user=user).first() if asset_id else None
+                asset = Asset.objects.filter(asset_id=asset_id, room__home=home).first() if asset_id else None
                 room = rooms_qs.filter(room_id=room_id).first() if room_id else None
                 if not room:
                     room = selected_room or rooms_qs.first()
-                if not room and not asset:
-                    messages.error(request, "Create or choose a room/asset before adding a task.")
-                else:
-                    #Create task
-                    next_due = compute_next_due_date(interval, start_date)
+                if asset and not room:
+                    room = asset.room
 
-                    Task.objects.create(
-                        name=name,
-                        interval=interval,
-                        asset=asset,
-                        room=room,
-                        last_completed_date=start_date,
-                        next_due_date=next_due,
-                    )
-                    messages.success(request, "Task created successfully.")
+                #Create task
+                next_due = compute_next_due_date(interval, start_date)
+
+                Task.objects.create(
+                    name=name,
+                    interval=interval,
+                    asset=asset,
+                    room=room,
+                    home=home,
+                    last_completed_date=start_date,
+                    next_due_date=next_due,
+                )
+                messages.success(request, "Task created successfully.")
 
         # extract form data
         elif action == "add-log":
@@ -187,7 +212,7 @@ def dashboard_view(request):
             notes = request.POST.get("log_notes", "").strip()
             cost_value = request.POST.get("log_cost", "").strip()
 
-            task = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)).filter(task_id=task_id).first()
+            task = Task.objects.filter(home=home, task_id=task_id).first()
             if not task:
                 messages.error(request, "Pick a valid task for the log.")
             else:
@@ -213,7 +238,7 @@ def dashboard_view(request):
         #Delete action        
         elif action == "delete-task":
             task_id = request.POST.get("task_id")
-            task = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)).filter(task_id=task_id).first()
+            task = Task.objects.filter(home=home, task_id=task_id).first()
             if not task:
                 messages.error(request, "Task was not found")
             else:
@@ -232,8 +257,8 @@ def dashboard_view(request):
             room_id = request.POST.get("room_id")
 
             #Get all assets/tasks that belong to rooms owned by the user
-            assets = Asset.objects.filter(room__user=user).filter(room=room_id)
-            tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)).filter(room=room_id)
+            assets = Asset.objects.filter(room__home=home).filter(room=room_id)
+            tasks = Task.objects.filter(home=home).filter(Q(room=room_id) | Q(asset__room=room_id))
 
             #Will need to order by due date
             logs = Log.objects.filter(task__in=tasks)
@@ -247,8 +272,8 @@ def dashboard_view(request):
                 "tasks": tasks,
                 "due_soon_tasks": due_soon_tasks,
                 "logs": logs,
-                "asset_choices": Asset.objects.filter(room__user=user),
-                "task_choices": Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)),
+                "asset_choices": Asset.objects.filter(room__home=home),
+                "task_choices": Task.objects.filter(home=home),
                 "interval_choices": Task.INTERVAL_CHOICES,
                 "category_choices": CATEGORY_CHOICES,
             }
@@ -267,8 +292,8 @@ def dashboard_view(request):
             asset_id = request.POST.get('asset_id')
 
             #Get all assets/tasks that belong to rooms owned by the user
-            assets = Asset.objects.filter(room__user=user)
-            tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)).filter(asset=asset_id)
+            assets = Asset.objects.filter(room__home=home)
+            tasks = Task.objects.filter(home=home, asset=asset_id)
 
             #Will need to order by due date
             logs = Log.objects.filter(task__in=tasks)
@@ -282,8 +307,8 @@ def dashboard_view(request):
                 "tasks": tasks,
                 "due_soon_tasks": due_soon_tasks,
                 "logs": logs,
-                "asset_choices": Asset.objects.filter(room__user=user),
-                "task_choices": Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)),
+                "asset_choices": Asset.objects.filter(room__home=home),
+                "task_choices": Task.objects.filter(home=home),
                 "interval_choices": Task.INTERVAL_CHOICES,
                 "category_choices": CATEGORY_CHOICES,
             }
@@ -292,8 +317,8 @@ def dashboard_view(request):
         return redirect("dashboard")
 
     #Get all assets/tasks that belong to rooms owned by the user
-    assets = Asset.objects.filter(room__user=user)
-    tasks = Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user))
+    assets = Asset.objects.filter(room__home=home)
+    tasks = Task.objects.filter(home=home)
     stored_brands = AssetDetails.objects.filter(owner__isnull=True).values_list('brand', flat=True).distinct().order_by('brand')
     stored_asset_details = AssetDetails.objects.filter(owner__isnull=True)
 
@@ -314,8 +339,8 @@ def dashboard_view(request):
         "tasks": tasks,
         "due_soon_tasks": due_soon_tasks,
         "logs": logs,
-        "asset_choices": Asset.objects.filter(room__user=user),
-        "task_choices": Task.objects.filter(Q(room__user=user) | Q(asset__room__user=user)),
+        "asset_choices": Asset.objects.filter(room__home=home),
+        "task_choices": Task.objects.filter(home=home),
         "interval_choices": Task.INTERVAL_CHOICES,
         "category_choices": CATEGORY_CHOICES,
     }
