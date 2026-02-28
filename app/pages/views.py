@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import re
 from decimal import Decimal, InvalidOperation
 
@@ -9,14 +9,16 @@ from django.shortcuts import redirect, render
 from .models import (
     AppUser,
     Asset,
-    AssetDetails,
     Home,
     HomeUserConnection,
     Log,
     Room,
+    Consumable,
+    ConsumableDetails,
     Task,
     INTERVAL_DAY_MAP,
     CATEGORY_CHOICES,
+    BRAND_CHOICES,
 )
 
 DUE_SOON_LIMIT = 5
@@ -109,7 +111,7 @@ def register_view(request):
 
     return render(request, "register.html")
 
-
+# This is turning into a disaster and will need to be refactored into the different views per page lol.
 def dashboard_view(request):
     if not request.session.get("username"):
         messages.error(request, "Please log in to continue.")
@@ -208,46 +210,86 @@ def dashboard_view(request):
                 request.session["home_id"] = str(new_home.home_id)
                 messages.success(request, "Switched home.")
         
-        #Adding a stored asset
+        # Adding an asset
         elif action == "add-asset":
             name = request.POST.get("asset_name", "").strip()
+            category = request.POST.get("asset_category", "general").strip().lower() # I fucked up the casing for this flow. Just lowercase everything
             brand = request.POST.get("asset_brand", "").strip()
-            category = request.POST.get("asset_category", "general").strip()
             model_number = request.POST.get("asset_model_number", "").strip()
             room_id = request.POST.get("asset_room")
+            consumable_name = request.POST.get("consumable_name", "").strip()
+            consumable_part_number = request.POST.get("consumable_part_number", "").strip()
+            consumable_cost = request.POST.get("consumable_cost", "").strip()
+            consumable_interval = request.POST.get("consumable_interval", "").strip()
+            has_consumable = request.POST.get("asset_has_consumable") == "yes"
+            if not has_consumable and any(
+                [
+                    consumable_name,
+                    consumable_part_number,
+                    consumable_cost,
+                    consumable_interval,
+                ]
+            ):
+                has_consumable = True
             room = None
             if room_id:
                 room = rooms_qs.filter(room_id=room_id).first()
             if not room:
                 room = selected_room or rooms_qs.first()
             if not room:
-                messages.error(request, "Create a room first to place assets.")
+                messages.error(request, "Room is required to place assets.")
             elif not name:
                 messages.error(request, "Asset name is required.")
+            elif category == "appliance" and not brand:
+                messages.error(request, "Brand is required for appliances.")
+            elif category == "appliance" and has_consumable and not consumable_name:
+                messages.error(request, "Consumable name is required.")
+            elif category == "appliance" and has_consumable and not consumable_part_number:
+                messages.error(request, "Consumable part number is required.")
+            elif category == "appliance" and has_consumable and not consumable_cost:
+                messages.error(request, "Consumable cost is required.")
+            elif category == "appliance" and has_consumable and not consumable_interval:
+                messages.error(request, "Consumable interval is required.")
             else:
-                details = AssetDetails.objects.get(brand=brand, name=name, model_number=model_number)
-                Asset.objects.create(name=name, details=details, category=category, room=room)
+                estimated_cost = None
+                if category == "appliance" and has_consumable:
+                    try:
+                        estimated_cost = Decimal(consumable_cost)
+                    except InvalidOperation:
+                        messages.error(request, "Consumable cost could not be read.")
+                        return redirect("dashboard")
 
-        # If the action is to add a custom asset, get the mandatory asset name, optional brand, optional category and room from the form else throw an error
-        elif action == "add-custom-asset":
-            name = request.POST.get("asset_name", "").strip()
-            brand = request.POST.get("asset_brand", "").strip()
-            category = request.POST.get("asset_category", "general").strip()
-            model_number = request.POST.get("asset_model_number", "").strip()
-            room_id = request.POST.get("asset_room")
-            room = None
-            if room_id:
-                room = rooms_qs.filter(room_id=room_id).first()
-            if not room:
-                room = selected_room or rooms_qs.first()
-            if not room:
-                messages.error(request, "Create a room first to place assets.")
-            elif not name:
-                messages.error(request, "Asset name is required.")
-            else:
-                details = AssetDetails(name=name, brand=brand, model_number=model_number, owner=user)
-                details.save()
-                Asset.objects.create(name=name, category=category, details=details, room=room)
+                asset = Asset.objects.create(
+                    name=name,
+                    brand=brand,
+                    model_number=model_number,
+                    category=category,
+                    room=room,
+                )
+
+                if category == "appliance" and has_consumable:
+                    task_next_due = compute_next_due_date(consumable_interval, date.today())
+                    consumable = Consumable.objects.create(
+                        name=consumable_name,
+                        asset=asset,
+                    )
+                    ConsumableDetails.objects.create(
+                        consumable=consumable,
+                        part_number=consumable_part_number,
+                        estimated_cost=estimated_cost,
+                        retail_url="",
+                        owner=user,
+                    )
+                    Task.objects.create(
+                        name=f"Replace {consumable_name}",
+                        interval=consumable_interval,
+                        asset=asset,
+                        room=asset.room,
+                        home=home,
+                        consumable=consumable,
+                        last_completed_date=date.today(),
+                        next_due_date=task_next_due,
+                    )
                 messages.success(request, "Asset added to the room.")
 
         # If the action is to add a task, get the mandatory task name, optional interval and start date, asset and room from the form else throw an error
@@ -399,11 +441,6 @@ def dashboard_view(request):
     #Get all assets/tasks that belong to rooms owned by the user
     assets = Asset.objects.filter(room__home=home)
     tasks = Task.objects.filter(home=home)
-    stored_brands = AssetDetails.objects.filter(owner__isnull=True).values_list('brand', flat=True).distinct().order_by('brand')
-    stored_asset_details = AssetDetails.objects.filter(owner__isnull=True)
-
-
-
     #Will need to order by due date
     logs = Log.objects.filter(task__in=tasks)
     due_soon_tasks = get_due_soon_tasks(tasks)
@@ -416,8 +453,6 @@ def dashboard_view(request):
         "selected_room": selected_room,
         "selected_room_id": selected_room_id,
         "assets": assets,
-        "stored_brands": stored_brands,
-        "stored_asset_details": stored_asset_details,
         "tasks": tasks,
         "due_soon_tasks": due_soon_tasks,
         "logs": logs,
@@ -425,6 +460,7 @@ def dashboard_view(request):
         "task_choices": Task.objects.filter(home=home),
         "interval_choices": Task.INTERVAL_CHOICES,
         "category_choices": CATEGORY_CHOICES,
+        "brand_choices": BRAND_CHOICES,
     }
     return render(request, "dashboard.html", context)
 

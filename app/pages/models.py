@@ -23,9 +23,24 @@ INTERVAL_DAY_MAP = {
 
 #choices for asset category
 CATEGORY_CHOICES = [
-    ("general", "General"),
-    ("appliance", "Appliance"),
-    ("furniture", "Furniture")
+    ("General", "General"),
+    ("Appliance", "Appliance"),
+    ("Furniture", "Furniture")
+]
+
+#choices for brand could be modified
+BRAND_CHOICES = [
+    ("GE", "GE"),
+    ("LG", "LG"),
+    ("Whirlpool", "Whirlpool"),
+    ("Frigidaire", "Frigidaire"),
+    ("Samsung", "Samsung"),
+    ("Bosch", "Bosch"),
+    ("KitchenAid", "KitchenAid"),
+    ("Maytag", "Maytag"),
+    ("Kenmore", "Kenmore"),
+    ("Other", "Other"),
+    ("Unknown", "Unknown"),
 ]
 
 
@@ -59,16 +74,17 @@ class AppUser(models.Model):
     def __str__(self):
         return f"{self.username} ({self.email})"
 
-
+#Maps each user(s) to their homes
 class HomeUserConnection(models.Model):
     home = models.ForeignKey(Home, on_delete=models.CASCADE, related_name="home_user_connections")
     user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name="home_user_connections")
 
+    #Marks that this is a composite key to prevent duplicate connections
     class Meta:
         unique_together = ("home", "user")
 
     def __str__(self):
-        return f"{self.user.username} -> {self.home.name}"
+        return f"{self.user.username} is connected to this home: {self.home.name}"
 
 
 # The rooms primary id is a uuid that is automatically generated on creation
@@ -83,20 +99,6 @@ class Room(models.Model):
     def __str__(self):
         return f"{self.name} ({self.home.name})"
 
-# This splits the data of an asset into a new model
-# This allows the original Asset to refer to 
-class AssetDetails(models.Model):
-    name = models.CharField(max_length=64)
-    brand = models.CharField(max_length=64, blank=True)
-    model_number = models.CharField(max_length=64, blank=True)
-
-    # This will be null for Assets not created by a user
-    owner = models.ForeignKey(AppUser, null=True, blank=True, on_delete=models.CASCADE, related_name="custom_asset_details")
-
-    #for admin/shell
-    def __str__(self):
-        return f"{self.name} ({self.brand})" if self.brand else self.name
-
 # I did the same uuid pk as the room
 # There is also a foreign key to the room, so that we can track which room the asset is in to make sure it appears correctly
 # I set arbitrary max length for name and brand fields
@@ -104,7 +106,8 @@ class AssetDetails(models.Model):
 class Asset(models.Model):
     asset_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=64)
-    details = models.ForeignKey(AssetDetails, on_delete=models.CASCADE, related_name="assets", null=True, blank=True)
+    brand = models.CharField(max_length=64, choices=BRAND_CHOICES, blank=True)
+    model_number = models.CharField(max_length=64, blank=True)
     #name = models.CharField(max_length=64)
     #brand = models.CharField(max_length=64, blank=True) # THIS USED AS MANUFACTURER. Could eventually be a constanstant as the other choices above are or something.
     #model_number = models.CharField(max_length=64, blank=True)
@@ -112,9 +115,20 @@ class Asset(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="assets")
 
     def __str__(self):
-        name = self.name or (self.details.name if self.details else "Unnamed asset")
+        name = self.name or "Unnamed asset"
         room_name = self.room.name if self.room else "Unassigned room"
         return f"{name} ({room_name})"
+
+    @property
+    def consumable_name(self):
+        #grabs consumable or part number for the ui to display
+        # this is used in dashboard.html to show what part an appliance needs.
+        for consumable in self.consumables.all():
+            if consumable.name:
+                return consumable.name
+            if consumable.details and consumable.details.part_number:
+                return consumable.details.part_number
+        return None
 
 # The task id is a uuid that is automatically generated on creation
 # The task is matched to the particular asset, when the asset is deleted, the task is deleted
@@ -131,6 +145,7 @@ class Task(models.Model):
     home = models.ForeignKey(Home, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
+    consumable = models.ForeignKey("Consumable", on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
 
     
 #Calculating the number of days between today and next due date
@@ -157,19 +172,19 @@ class Task(models.Model):
 # The estimated cost is optional, but if it is present, it will be displayed in the admin page
 class Consumable(models.Model):
     consumable_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    details = models.ForeignKey('ConsumableDetails',on_delete=models.CASCADE, related_name="consumables", null=True)
-    #part_number = models.CharField(max_length=64, blank=True)
-    #estimated_cost = models.DecimalField(max_digits=9, decimal_places=2, default=0, blank=True)
-    #retail_url = models.URLField(blank=True)
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="consumables")
+    name = models.CharField(max_length=64, blank=True)
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name="consumables")
 
     def __str__(self):
+        if self.name:
+            return self.name
         if self.details and self.details.part_number:
             return self.details.part_number
-        return f"Consumable for {self.task.name}"
+        return f"Consumable for {self.asset.name}"
 
 # Details for a consumable. Allows for  
 class ConsumableDetails(models.Model):
+    consumable = models.OneToOneField("Consumable", on_delete=models.CASCADE, related_name="details")
     part_number = models.CharField(max_length=64, blank=True)
     estimated_cost = models.DecimalField(max_digits=9, decimal_places=2, default=0, blank=True)
     retail_url = models.URLField(blank=True)
