@@ -32,7 +32,7 @@
             </option>
           {% endfor %}
         </select>
-        <button type="submit" class="border px-3 py-1">Switch</button>
+        <button type="submit" class="border px-3 py-1 bg-green-400">Switch</button>
       </form>
     </div>
 
@@ -43,13 +43,14 @@
         <input type="hidden" name="action" value="update-home">
         <p class="text-sm text-black">Edit home</p>
         <input name="home_name" value="{{ home.name }}" class="w-full border px-2 py-1" required>
-        <input name="home_address" value="{{ home.address }}" placeholder="Address" class="w-full border px-2 py-1">
+{#          Address section. To eventually be used by map api#}
+        <input name="home_address" value="{{ home.address }}" placeholder="Address" class="w-full border px-2 py-1" required>
         <div class="grid grid-cols-2 gap-2">
-          <input name="home_city" value="{{ home.city }}" placeholder="City" class="w-full border px-2 py-1">
-          <input name="home_state" value="{{ home.state }}" placeholder="State" class="w-full border px-2 py-1">
+          <input name="home_city" value="{{ home.city }}" placeholder="City" class="w-full border px-2 py-1" required>
+          <input name="home_state" value="{{ home.state }}" placeholder="State" class="w-full border px-2 py-1" required>
         </div>
-        <input name="home_zip" value="{{ home.zip_code }}" placeholder="Zip Code" class="w-full border px-2 py-1">
-        <button type="submit" class="border px-3 py-1">Save</button>
+        <input name="home_zip" value="{{ home.zip_code }}" placeholder="Zip Code" class="w-full border px-2 py-1" required>
+        <button type="submit" class="border px-3 py-1 bg-green-400">Save</button>
       </form>
 
       <form method="post" class="space-y-2">
@@ -63,7 +64,7 @@
           <input name="home_state" placeholder="State" class="w-full border px-2 py-1">
         </div>
         <input name="home_zip" placeholder="Zip Code" class="w-full border px-2 py-1">
-        <button type="submit" class="border px-3 py-1">Add home</button>
+        <button type="submit" class="border px-3 py-1 bg-green-400">Add home</button>
       </form>
     </div>
   </section>
@@ -135,23 +136,19 @@
             <li class=" text-black flex justify-between items-start border-zinc-400 border-b pb-2 last:border-none">
               <div>
                 <div class="font-medium text-black">{{ asset.name }}</div>
-                <div class="text-xs text-black">
-                  {% if asset.details and asset.details.brand %}
-                    {{ asset.details.brand }}
-                  {% else %}
-                    Unknown
-                  {% endif %}
-                  -
-                  {% if asset.category %}
-                    {{ asset.category }}
-                  {% else %}
-                    General
-                  {% endif %}
-                </div>
+{#                Display if it has a brand/consumable#}
+                {% if asset.brand %}
+                  <div class="text-xs text-black">Brand: {{ asset.brand }}</div>
+                {% endif %}
+                {% if asset.consumable_name %}
+                  <div class="text-xs text-black">
+                    Consumable: {{ asset.consumable_name }}
+                  </div>
+                {% endif %}
               </div>
               <div class="text-xs text-black">Room: {{ asset.room.name }}</div>
-              
-              
+
+
               <div class = "flex flex-col items-end space-y-2">
 
                 {# button to sort by asset #}
@@ -169,7 +166,7 @@
                   <input type="hidden" name="action" value="delete-asset">
                   <input type="hidden" name="asset_id" value="{{asset.asset_id}}">
                   <button type="submit" title="Delete Asset" class="text-xs text-red-400">Delete
-                  </button>                
+                  </button>
                 </form>
               </div>
             </li>
@@ -278,86 +275,63 @@
         {#These inputs tell our backend what actions to perform and which room view to return after submission#}
       <input type="hidden" name="action" value="add-room">
       <input type="hidden" name="return_room" value="{{ selected_room_id }}">
-      <p class="text-sm ">Add room</p>
+      <p class="text-sm ">Add room to {{ home.name }}</p>
       <input name="room_name" placeholder="Room name" class="w-full border px-2 py-1" required>
       <textarea name="room_description" placeholder="Description" class="w-full border px-2 py-1" rows="2"></textarea>
-      <button type="submit" class="border px-3 py-1">Save</button>
+      <button type="submit" class="border px-3 py-1 bg-green-400">Save</button>
     </form>
-    {#This represents the stored assets form, which will be displayed by default#}
-    <div id="storedAssetSection" class="space-y-2">
-      <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="add-asset">
-        <input type="hidden" name="return_room" value="{{ selected_room_id }}">
-        <p class="text-sm ">Add asset</p>
-        {#Brand Selector#}
-        <select name="asset_brand" id="brandSelect" class="w-full border px-2 py-1" required>
+    <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
+{#        Adjust flow entirely. See script below. Conditionally prompt for appliance/consumable fields.#}
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add-asset">
+      <input type="hidden" name="return_room" value="{{ selected_room_id }}">
+      <p class="text-sm ">Add asset</p>
+      <input name="asset_name" placeholder="Asset name" class="w-full border px-2 py-1" required>
+        <select name="asset_room" class="w-full border px-2 py-1" required>
+            <option value="" class="">Select Room</option>
+            {% for room in rooms %}
+                <option value="{{ room.room_id }}">{{ room.name }}</option>
+            {% endfor %}
+        </select>
+      <select name="asset_category" id="categorySelect" class="w-full border px-2 py-1">
+          {% for value, label in category_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+      </select>
+      <div id="applianceFields" style="display: none;" class="space-y-2">
+        <select name="asset_brand" id="brandSelect" class="w-full border px-2 py-1">
           <option value="">Select Brand</option>
-          {% for brand in stored_brands %}
-            <option value="{{ brand }}">{{ brand }}</option>
+          {% for value, label in brand_choices %}
+            <option value="{{ value }}">{{ label }}</option>
           {% endfor %}
         </select>
-        {#Name Selector#}
-        <select name="asset_name" id="nameSelect" class="w-full border px-2 py-1" required>
-          <option value="">Select Name</option>
-          {% for asset in stored_asset_details %}
-            <option value="{{ asset.name }}" data-brand="{{ asset.brand }}">{{ asset.name }}</option>
-          {% endfor %}
-        </select>
-        {#Model Selector#}
-        <select name="asset_model_number" id="modelSelect" class="w-full border px-2 py-1" required>
-          <option value="">Select Model Number</option>
-          {% for item in stored_asset_details %}
-          <option value="{{ item.model_number }}" data-brand="{{ item.brand }}" data-name="{{ item.name }}">{{ item.model_number }}</option>
-          {% endfor %}
-        </select>
-        {#Category Selector#}
-        <select name="asset_category" class="w-full border px-2 py-1">
-            {% for value, label in category_choices %}
+        <input name="asset_model_number" placeholder="Model Number" class="w-full border px-2 py-1">
+        <div class="space-y-2">
+{#        Conditional check to show fields if consumable value is yes#}
+          <p class="text-xs text-black font-medium">Does this appliance use a consumable?</p>
+          <div class="flex items-center gap-4 text-xs">
+            <label class="flex items-center gap-1">
+              <input type="radio" name="asset_has_consumable" value="yes"> Yes
+            </label>
+            <label class="flex items-center gap-1">
+              <input type="radio" name="asset_has_consumable" value="no" checked> No
+            </label>
+          </div>
+          <div id="consumableFields" style="display: none;" class="space-y-2">
+            <input name="consumable_name" placeholder="Consumable name" class="w-full border px-2 py-1" data-consumable-field>
+            <input name="consumable_part_number" placeholder="Part number" class="w-full border px-2 py-1" data-consumable-field>
+            <input name="consumable_cost" placeholder="Estimated cost (TODO!!!)" class="w-full border px-2 py-1" data-consumable-field>
+            <select name="consumable_interval" class="w-full border px-2 py-1" data-consumable-field>
+              <option value="">Replace interval</option>
+              {% for value, label in interval_choices %}
                 <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-        </select>
-        {#Room Selector#}
-        <select name="asset_room" class="w-full border px-2 py-1">
-          <option value="" class="">Select Room</option>
-          {% for room in rooms %}
-            <option value="{{ room.room_id }}">{{ room.name }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="border px-3 py-1">Save</button>
-        <button type="button" id="customModeBtn" class="border px-3 py-1">Add Your Own</button>
-      </form>
-    </div>
-    {#This represents the custom assets form, which will be displayed after clicking the button#}
-    <div id="customAssetSection" class="space-y-2 hidden">
-      <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="add-custom-asset">
-        <input type="hidden" name="return_room" value="{{ selected_room_id }}">
-        <p class="text-sm ">Add custom asset</p>
-          {#Again, these inputs tell our backend what actions to perform and which room view to return after submission#}
-        <input name="asset_name" placeholder="Asset name" class="w-full border px-2 py-1" required>
-        <select name="asset_category" id="categorySelect" class="w-full border px-2 py-1">
-            {% for value, label in category_choices %}
-                <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-        </select>
-          {#This container is encapsulates the conditional fields that are dependen on the categorySelect being Appliance. See script below! :)#}
-          {#None hides the div when the page first loads#}
-        <div id="applianceFields" style="display: none;" class="space-y-2">
-          <input name="asset_brand" placeholder="Brand" class="w-full border px-2 py-1">
-          <input name="asset_model_number" placeholder="Model Number" class="w-full border px-2 py-1">
+              {% endfor %}
+            </select>
+          </div>
         </div>
-        <select name="asset_room" class="w-full border px-2 py-1">
-          <option value="" class="">Select Room</option>
-          {% for room in rooms %}
-            <option value="{{ room.room_id }}">{{ room.name }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="border px-3 py-1">Save</button>
-        <button type="button" id="storedModeBtn" class="border px-3 py-1">Use a Premade</button>
-      </form>
-    </div>
+      </div>
+      <button type="submit" class="border px-3 py-1 bg-green-400">Save</button>
+    </form>
   </section>
 
     {#Add task & log section. It is basically just a copy paste of the asset but for logs and tasks#}
@@ -391,7 +365,7 @@
           <option value="{{ asset.asset_id }}">{{ asset.name }}</option>
         {% endfor %}
       </select>
-      <button type="submit" class="border px-3 py-1">Save</button>
+      <button type="submit" class="border px-3 py-1 bg-green-400">Save</button>
     </form>
     <form method="post" class="border rounded bg-[#dbf3fa] p-4 space-y-2">
       {% csrf_token %}
@@ -411,79 +385,46 @@
 
       <input name="log_cost" placeholder="Cost" class="w-full border px-2 py-1">
       <textarea name="log_notes" placeholder="Notes" class="w-full border px-2 py-1" rows="2"></textarea>
-      <button type="submit" class="border px-3 py-1">Save</button>
+      <button type="submit" class="border px-3 py-1 bg-green-400">Save</button>
     </form>
   </section>
   <script>
-      {#Listens for chanfs to the category select section. If the current category is appliance, show the brand and model fields.#}
-    document.getElementById('categorySelect').addEventListener('change', function() {
-        const applianceDiv = document.getElementById('applianceFields');
+      //{#Show particular fields based on category selection. (change display to block#}
+    const categorySelect = document.getElementById('categorySelect');
+    const applianceFields = document.getElementById('applianceFields');
+    const consumableFields = document.getElementById('consumableFields');
+    const consumableRadios = document.querySelectorAll('input[name="asset_has_consumable"]');
+    const brandSelect = document.getElementById('brandSelect');
+    const consumableInputs = document.querySelectorAll('[data-consumable-field]');
 
-        applianceDiv.style.display = this.value === 'appliance' ? 'block' : 'none';
-    });
+    function updateApplianceFields() {
+      const isAppliance = categorySelect.value === 'Appliance';
+      applianceFields.style.display = isAppliance ? 'block' : 'none';
+      brandSelect.required = isAppliance;
+      //{#Makes consumable fields optional if appliance has no consumable || is not an appliance#}
+      if (!isAppliance) {
+        consumableFields.style.display = 'none';
+        consumableInputs.forEach((input) => {
+          input.required = false;
+        });
+      }
+    }
+
+    function updateConsumableFields() {
+      const selected = document.querySelector('input[name="asset_has_consumable"]:checked');
+      const show = selected && selected.value === 'yes';
+      consumableFields.style.display = show ? 'block' : 'none';
+      consumableInputs.forEach((input) => {
+        input.required = show;
+      });
+    }
+
+    //{#When appliance is selected, show appliance fields and brand select#}
+    categorySelect.addEventListener('change', updateApplianceFields);
+    //{#When consumable is selected, show consumable fields and consumable inputs#}
+    consumableRadios.forEach((radio) => radio.addEventListener('change', updateConsumableFields));
+    updateApplianceFields();
+    updateConsumableFields();
   </script>
-  <script>
-    {#Responsible for switching between stored & custom asset forms#}
-    const storedBtn = document.getElementById("storedModeBtn");
-    const customBtn = document.getElementById("customModeBtn");
-    const storedSection = document.getElementById("storedAssetSection");
-    const customSection = document.getElementById("customAssetSection");
-
-    customSection.classList.add("hidden");
-    storedSection.classList.remove("hidden");
-
-    storedBtn.addEventListener("click", function () {
-      storedSection.classList.remove("hidden");
-      customSection.classList.add("hidden");
-    });
-
-    customBtn.addEventListener("click", function () {
-      storedSection.classList.add("hidden");
-      customSection.classList.remove("hidden");
-    });
-</script>
-<script>
-  const brandSelect = document.getElementById('brandSelect');
-  const nameSelect = document.getElementById('nameSelect');
-  const modelSelect = document.getElementById('modelSelect');
-
-  const names = Array.from(nameSelect.options).slice(1);
-  const models = Array.from(modelSelect.options).slice(1);
-
-  function filterNames() {
-    const selectedBrand = brandSelect.value;
-
-    nameSelect.innerHTML = '<option value="">Select Name</option>';
-    modelSelect.innerHTML = '<option value="">Select Model Number</option>';
-
-    names.forEach(opt => {
-      if (!selectedBrand || opt.dataset.brand === selectedBrand) {
-        nameSelect.appendChild(opt.cloneNode(true));
-      }
-    });
-
-    nameSelect.value = '';
-  }
-
-  function filterModels() {
-    const selectedBrand = brandSelect.value;
-    const selectedName = nameSelect.value;
-
-    modelSelect.innerHTML = '<option value="">Select Model Number</option>';
-
-    models.forEach(opt => {
-      const brandMatch = !selectedBrand || opt.dataset.brand === selectedBrand;
-      const nameMatch = !selectedName || opt.dataset.name === selectedName;
-      if (brandMatch && nameMatch) {
-        modelSelect.appendChild(opt.cloneNode(true));
-      }
-    });
-
-    modelSelect.value = '';
-  }
-
-  brandSelect.addEventListener('change', filterNames);
-  nameSelect.addEventListener('change', filterModels);
-</script>
 </div>
 {% endblock %}
