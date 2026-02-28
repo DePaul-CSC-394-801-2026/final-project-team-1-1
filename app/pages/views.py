@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import re
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
@@ -32,13 +33,32 @@ def compute_next_due_date(interval, start_date):
         return start_date
     return start_date + timedelta(days=days)
 
+#Use regular expressions for validation
+def validate_home_fields(state, zip_code):
+    errors = []
+    if state:
+        if not re.fullmatch(r"[A-Za-z]{2}", state):
+            errors.append("State must be a 2-letter code.")
+    if zip_code:
+        if not re.fullmatch(r"\d{5}(-\d{4})?", zip_code):
+            errors.append("Zip Code must be 5 digits or 5+4 digits (12345 or 12345-6789).")
+    return errors
 
-def get_current_home(user):
-    home = user.homes.first()
+# Fetch the current home for the user
+def get_current_home(request, user):
+    home = None
+    #Determine the home for this user
+    home_id = request.session.get("home_id")
+    #Find that home in the DB if it belongs to the user
+    if home_id:
+        home = user.homes.filter(home_id=home_id).first()
     if home:
+        request.session["home_id"] = str(home.home_id)
         return home
-    home = Home.objects.create(name="My Home", address="")
+    #If the user doesn't have a home, create one for them
+    home = Home.objects.create(name="My Home")
     HomeUserConnection.objects.create(user=user, home=home)
+    request.session["home_id"] = str(home.home_id)
     return home
 
 
@@ -82,7 +102,7 @@ def register_view(request):
             return render(request, "register.html")
 
         user = AppUser.objects.create(username=username, password=password, email=email)
-        home = Home.objects.create(name="My Home", address="")
+        home = Home.objects.create(name="My Home")
         HomeUserConnection.objects.create(user=user, home=home)
         messages.success(request, "Account created.")
         return redirect("login")
@@ -99,7 +119,7 @@ def dashboard_view(request):
     username = request.session["username"]
     user = AppUser.objects.filter(username=username).first()
 
-    home = get_current_home(user)
+    home = get_current_home(request, user)
 
     # Fetch rooms for the home
     rooms_qs = Room.objects.filter(home=home)
@@ -127,6 +147,66 @@ def dashboard_view(request):
                 messages.success(request, "Room added for you to organize.")
             else:
                 messages.error(request, "Room name is required.")
+
+        # Update home details
+        elif action == "update-home":
+            home_name = request.POST.get("home_name", "").strip()
+            home_address = request.POST.get("home_address", "").strip()
+            home_city = request.POST.get("home_city", "").strip()
+            home_state = request.POST.get("home_state", "").strip()
+            home_zip = request.POST.get("home_zip", "").strip()
+            if not home_name:
+                messages.error(request, "Home name is required.")
+            else:
+                # Validate home fields
+                errors = validate_home_fields(home_state, home_zip)
+                if errors:
+                    for message in errors:
+                        messages.error(request, message)
+                else:
+                    home.name = home_name
+                    home.address = home_address
+                    home.city = home_city
+                    home.state = home_state.upper()
+                    home.zip_code = home_zip
+                    home.save(update_fields=["name", "address", "city", "state", "zip_code"])
+                    messages.success(request, "Home updated.")
+        # Add new home per user + home
+        elif action == "add-home":
+            home_name = request.POST.get("home_name", "").strip()
+            home_address = request.POST.get("home_address", "").strip()
+            home_city = request.POST.get("home_city", "").strip()
+            home_state = request.POST.get("home_state", "").strip()
+            home_zip = request.POST.get("home_zip", "").strip()
+            if not home_name:
+                messages.error(request, "Home name is required.")
+            else:
+                errors = validate_home_fields(home_state, home_zip)
+                if errors:
+                    for message in errors:
+                        messages.error(request, message)
+                else:
+                    new_home = Home.objects.create(
+                        name=home_name,
+                        address=home_address,
+                        city=home_city,
+                        state=home_state.upper(),
+                        zip_code=home_zip,
+                    )
+                    HomeUserConnection.objects.create(user=user, home=new_home)
+                    request.session["home_id"] = str(new_home.home_id)
+                    messages.success(request, "Home added and set as current.")
+
+        # Switching to a different home
+        elif action == "switch-home":
+            home_id = request.POST.get("home_id")
+            #This could probably be removed. Was used for debugging. Guess its defensive. lol
+            new_home = user.homes.filter(home_id=home_id).first() if home_id else None
+            if not new_home:
+                messages.error(request, "Home not found.")
+            else:
+                request.session["home_id"] = str(new_home.home_id)
+                messages.success(request, "Switched home.")
         
         #Adding a stored asset
         elif action == "add-asset":
@@ -330,6 +410,8 @@ def dashboard_view(request):
 
     #Everything we are passing to the dashboard page is in the context
     context = {
+        "home": home,
+        "homes": user.homes.all(),
         "rooms": rooms_qs,
         "selected_room": selected_room,
         "selected_room_id": selected_room_id,
