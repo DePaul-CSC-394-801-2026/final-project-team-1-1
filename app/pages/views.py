@@ -137,21 +137,10 @@ def dashboard_view(request):
 
     # If submitting any form from the dashboard page that is associated with this view
     if request.method == "POST":
-        return_room = request.POST.get("return_room", selected_room_id or "all") or "all"
         action = request.POST.get("action")
 
-        # If the action is to add a room, get the mandatory room name and optional description from the form else throw an error
-        if action == "add-room":
-            name = request.POST.get("room_name", "").strip()
-            description = request.POST.get("room_description", "").strip()
-            if name:
-                Room.objects.create(home=home, name=name, description=description)
-                messages.success(request, "Room added for you to organize.")
-            else:
-                messages.error(request, "Room name is required.")
-
         # Switching to a different home
-        elif action == "switch-home":
+        if action == "switch-home":
             home_id = request.POST.get("home_id")
             #This could probably be removed. Was used for debugging. Guess its defensive. lol
             new_home = user.homes.filter(home_id=home_id).first() if home_id else None
@@ -160,7 +149,181 @@ def dashboard_view(request):
             else:
                 request.session["home_id"] = str(new_home.home_id)
                 messages.success(request, "Switched home.")
+        #Delete action        
+        elif action == "delete-task":
+            task_id = request.POST.get("task_id")
+            task = Task.objects.filter(home=home, task_id=task_id).first()
+            if not task:
+                messages.error(request, "Task was not found")
+            else:
+                task.delete()
+                messages.success(request, "Task deleted.")
+        elif action == "delete-room": 
+            room_id = request.POST.get('room_id')
+            room = rooms_qs.filter(room_id=room_id).first() if room_id else None
+            if not room: 
+                messages.error(request, "Room was not found")
+            else:
+                room.delete()
+                messages.success(request, "Room was deleted.")
+        #Sort by room
+        elif action == "sort-room":
+            room_id = request.POST.get("room_id")
+
+            #Get all assets/tasks that belong to rooms owned by the user
+            assets = Asset.objects.filter(room__home=home).filter(room=room_id)
+            tasks = Task.objects.filter(home=home).filter(Q(room=room_id) | Q(asset__room=room_id))
+
+            #Will need to order by due date
+            logs = Log.objects.filter(task__in=tasks)
+            due_soon_tasks = get_due_soon_tasks(tasks)
+
+            context = {
+                "rooms": rooms_qs,
+                "selected_room": selected_room,
+                "selected_room_id": selected_room_id,
+                "assets": assets,
+                "tasks": tasks,
+                "due_soon_tasks": due_soon_tasks,
+                "logs": logs,
+            }
+            return render(request, "dashboard.html", context)
+
+        elif action == "delete-asset":
+            asset_id = request.POST.get("asset_id")
+            asset = assets_qs.filter(asset_id=asset_id).first() if asset_id else None
+            if not asset:
+                messages.error(request, "Asset was not found")
+            else:
+                asset.delete()
+                messages.success(request, "Asset was deleted")
+        #Sort by asset
+        elif action == "sort-asset":
+            asset_id = request.POST.get('asset_id')
+
+            #Get all assets/tasks that belong to rooms owned by the user
+            assets = Asset.objects.filter(room__home=home)
+            tasks = Task.objects.filter(home=home, asset=asset_id)
+
+            #Will need to order by due date
+            logs = Log.objects.filter(task__in=tasks)
+            due_soon_tasks = get_due_soon_tasks(tasks)
+
+            context = {
+                "rooms": rooms_qs,
+                "selected_room": selected_room,
+                "selected_room_id": selected_room_id,
+                "assets": assets,
+                "tasks": tasks,
+                "due_soon_tasks": due_soon_tasks,
+                "logs": logs,
+            }
+            return render(request, "dashboard.html", context)
         
+        return redirect("dashboard")
+
+    #Get all assets/tasks that belong to rooms owned by the user
+    assets = Asset.objects.filter(room__home=home)
+    tasks = Task.objects.filter(home=home)
+    #Will need to order by due date
+    logs = Log.objects.filter(task__in=tasks)
+    due_soon_tasks = get_due_soon_tasks(tasks)
+
+    #Everything we are passing to the dashboard page is in the context
+    context = {
+        "home": home,
+        "homes": user.homes.all(),
+        "rooms": rooms_qs,
+        "selected_room": selected_room,
+        "selected_room_id": selected_room_id,
+        "assets": assets,
+        "tasks": tasks,
+        "due_soon_tasks": due_soon_tasks,
+        "logs": logs,
+    }
+    return render(request, "dashboard.html", context)
+
+
+def manage_homes_view(request):
+    # Fetch the current session username
+    if not request.session.get("username"):
+        messages.error(request, "Please log in to continue.")
+        return redirect("login")
+
+    username = request.session["username"]
+    user = AppUser.objects.filter(username=username).first()
+    home = get_current_home(request, user)
+
+    rooms_qs = Room.objects.filter(home=home)
+    assets_qs = Asset.objects.filter(room__home=home)
+
+    selected_room_id = request.GET.get("room", "all")
+    selected_room = None
+    if selected_room_id and selected_room_id != "all":
+        selected_room = rooms_qs.filter(room_id=selected_room_id).first()
+
+    if request.method == "POST":
+        return_room = request.POST.get("return_room", selected_room_id or "all") or "all"
+        action = request.POST.get("action")
+
+        # Update home details
+        if action == "update-home":
+            home_name = request.POST.get("home_name", "").strip()
+            home_address = request.POST.get("home_address", "").strip()
+            home_city = request.POST.get("home_city", "").strip()
+            home_state = request.POST.get("home_state", "").strip()
+            home_zip = request.POST.get("home_zip", "").strip()
+            if not home_name:
+                messages.error(request, "Home name is required.")
+            else:
+                errors = validate_home_fields(home_state, home_zip)
+                if errors:
+                    for message in errors:
+                        messages.error(request, message)
+                else:
+                    home.name = home_name
+                    home.address = home_address
+                    home.city = home_city
+                    home.state = home_state.upper()
+                    home.zip_code = home_zip
+                    home.save(update_fields=["name", "address", "city", "state", "zip_code"])
+                    messages.success(request, "Home updated.")
+        # Add new home per user + home
+        elif action == "add-home":
+            home_name = request.POST.get("home_name", "").strip()
+            home_address = request.POST.get("home_address", "").strip()
+            home_city = request.POST.get("home_city", "").strip()
+            home_state = request.POST.get("home_state", "").strip()
+            home_zip = request.POST.get("home_zip", "").strip()
+            if not home_name:
+                messages.error(request, "Home name is required.")
+            else:
+                errors = validate_home_fields(home_state, home_zip)
+                if errors:
+                    for message in errors:
+                        messages.error(request, message)
+                else:
+                    new_home = Home.objects.create(
+                        name=home_name,
+                        address=home_address,
+                        city=home_city,
+                        state=home_state.upper(),
+                        zip_code=home_zip,
+                    )
+                    HomeUserConnection.objects.create(user=user, home=new_home)
+                    request.session["home_id"] = str(new_home.home_id)
+                    messages.success(request, "Home added and set as current.")
+
+        # If the action is to add a room, get the mandatory room name and optional description from the form else throw an error
+        elif action == "add-room":
+            name = request.POST.get("room_name", "").strip()
+            description = request.POST.get("room_description", "").strip()
+            if name:
+                Room.objects.create(home=home, name=name, description=description)
+                messages.success(request, "Room added for you to organize.")
+            else:
+                messages.error(request, "Room name is required.")
+
         # Adding an asset
         elif action == "add-asset":
             name = request.POST.get("asset_name", "").strip()
@@ -173,6 +336,7 @@ def dashboard_view(request):
             consumable_cost = request.POST.get("consumable_cost", "").strip()
             consumable_interval = request.POST.get("consumable_interval", "").strip()
             has_consumable = request.POST.get("asset_has_consumable") == "yes"
+            #just in case the user hits no after entering everything in, it still saves
             if not has_consumable and any(
                 [
                     consumable_name,
@@ -208,7 +372,7 @@ def dashboard_view(request):
                         estimated_cost = Decimal(consumable_cost)
                     except InvalidOperation:
                         messages.error(request, "Consumable cost could not be read.")
-                        return redirect("dashboard")
+                        return redirect("manage_homes")
 
                 asset = Asset.objects.create(
                     name=name,
@@ -308,181 +472,21 @@ def dashboard_view(request):
                     task.next_due_date = compute_next_due_date(task.interval, log.completion_date)
                     task.save(update_fields=["last_completed_date", "next_due_date"])
                 messages.success(request, "Log recorded for task. :)")
-        #Delete action        
-        elif action == "delete-task":
-            task_id = request.POST.get("task_id")
-            task = Task.objects.filter(home=home, task_id=task_id).first()
-            if not task:
-                messages.error(request, "Task was not found")
-            else:
-                task.delete()
-                messages.success(request, "Task deleted.")
-        elif action == "delete-room": 
-            room_id = request.POST.get('room_id')
-            room = rooms_qs.filter(room_id=room_id).first() if room_id else None
-            if not room: 
-                messages.error(request, "Room was not found")
-            else:
-                room.delete()
-                messages.success(request, "Room was deleted.")
-        #Sort by room
-        elif action == "sort-room":
-            room_id = request.POST.get("room_id")
-
-            #Get all assets/tasks that belong to rooms owned by the user
-            assets = Asset.objects.filter(room__home=home).filter(room=room_id)
-            tasks = Task.objects.filter(home=home).filter(Q(room=room_id) | Q(asset__room=room_id))
-
-            #Will need to order by due date
-            logs = Log.objects.filter(task__in=tasks)
-            due_soon_tasks = get_due_soon_tasks(tasks)
-
-            context = {
-                "rooms": rooms_qs,
-                "selected_room": selected_room,
-                "selected_room_id": selected_room_id,
-                "assets": assets,
-                "tasks": tasks,
-                "due_soon_tasks": due_soon_tasks,
-                "logs": logs,
-                "asset_choices": Asset.objects.filter(room__home=home),
-                "task_choices": Task.objects.filter(home=home),
-                "interval_choices": Task.INTERVAL_CHOICES,
-                "category_choices": CATEGORY_CHOICES,
-            }
-            return render(request, "dashboard.html", context)
-
-        elif action == "delete-asset":
-            asset_id = request.POST.get("asset_id")
-            asset = assets_qs.filter(asset_id=asset_id).first() if asset_id else None
-            if not asset:
-                messages.error(request, "Asset was not found")
-            else:
-                asset.delete()
-                messages.success(request, "Asset was deleted")
-        #Sort by asset
-        elif action == "sort-asset":
-            asset_id = request.POST.get('asset_id')
-
-            #Get all assets/tasks that belong to rooms owned by the user
-            assets = Asset.objects.filter(room__home=home)
-            tasks = Task.objects.filter(home=home, asset=asset_id)
-
-            #Will need to order by due date
-            logs = Log.objects.filter(task__in=tasks)
-            due_soon_tasks = get_due_soon_tasks(tasks)
-
-            context = {
-                "rooms": rooms_qs,
-                "selected_room": selected_room,
-                "selected_room_id": selected_room_id,
-                "assets": assets,
-                "tasks": tasks,
-                "due_soon_tasks": due_soon_tasks,
-                "logs": logs,
-                "asset_choices": Asset.objects.filter(room__home=home),
-                "task_choices": Task.objects.filter(home=home),
-                "interval_choices": Task.INTERVAL_CHOICES,
-                "category_choices": CATEGORY_CHOICES,
-            }
-            return render(request, "dashboard.html", context)
-        
-        return redirect("dashboard")
-
-    #Get all assets/tasks that belong to rooms owned by the user
-    assets = Asset.objects.filter(room__home=home)
-    tasks = Task.objects.filter(home=home)
-    #Will need to order by due date
-    logs = Log.objects.filter(task__in=tasks)
-    due_soon_tasks = get_due_soon_tasks(tasks)
-
-    #Everything we are passing to the dashboard page is in the context
-    context = {
-        "home": home,
-        "homes": user.homes.all(),
-        "rooms": rooms_qs,
-        "selected_room": selected_room,
-        "selected_room_id": selected_room_id,
-        "assets": assets,
-        "tasks": tasks,
-        "due_soon_tasks": due_soon_tasks,
-        "logs": logs,
-        "asset_choices": Asset.objects.filter(room__home=home),
-        "task_choices": Task.objects.filter(home=home),
-        "interval_choices": Task.INTERVAL_CHOICES,
-        "category_choices": CATEGORY_CHOICES,
-        "brand_choices": BRAND_CHOICES,
-    }
-    return render(request, "dashboard.html", context)
-
-
-def manage_homes_view(request):
-    # Fetch the current session username
-    if not request.session.get("username"):
-        messages.error(request, "Please log in to continue.")
-        return redirect("login")
-
-    username = request.session["username"]
-    user = AppUser.objects.filter(username=username).first()
-    home = get_current_home(request, user)
-
-    #
-    if request.method == "POST":
-        action = request.POST.get("action")
-
-        # Update home details
-        if action == "update-home":
-            home_name = request.POST.get("home_name", "").strip()
-            home_address = request.POST.get("home_address", "").strip()
-            home_city = request.POST.get("home_city", "").strip()
-            home_state = request.POST.get("home_state", "").strip()
-            home_zip = request.POST.get("home_zip", "").strip()
-            if not home_name:
-                messages.error(request, "Home name is required.")
-            else:
-                errors = validate_home_fields(home_state, home_zip)
-                if errors:
-                    for message in errors:
-                        messages.error(request, message)
-                else:
-                    home.name = home_name
-                    home.address = home_address
-                    home.city = home_city
-                    home.state = home_state.upper()
-                    home.zip_code = home_zip
-                    home.save(update_fields=["name", "address", "city", "state", "zip_code"])
-                    messages.success(request, "Home updated.")
-        # Add new home per user + home
-        elif action == "add-home":
-            home_name = request.POST.get("home_name", "").strip()
-            home_address = request.POST.get("home_address", "").strip()
-            home_city = request.POST.get("home_city", "").strip()
-            home_state = request.POST.get("home_state", "").strip()
-            home_zip = request.POST.get("home_zip", "").strip()
-            if not home_name:
-                messages.error(request, "Home name is required.")
-            else:
-                errors = validate_home_fields(home_state, home_zip)
-                if errors:
-                    for message in errors:
-                        messages.error(request, message)
-                else:
-                    new_home = Home.objects.create(
-                        name=home_name,
-                        address=home_address,
-                        city=home_city,
-                        state=home_state.upper(),
-                        zip_code=home_zip,
-                    )
-                    HomeUserConnection.objects.create(user=user, home=new_home)
-                    request.session["home_id"] = str(new_home.home_id)
-                    messages.success(request, "Home added and set as current.")
 
         return redirect("manage_homes")
 
     context = {
         "home": home,
         "homes": user.homes.all(),
+        "rooms": rooms_qs,
+        "selected_room": selected_room,
+        "selected_room_id": selected_room_id,
+        "assets": assets_qs,
+        "asset_choices": Asset.objects.filter(room__home=home),
+        "task_choices": Task.objects.filter(home=home),
+        "interval_choices": Task.INTERVAL_CHOICES,
+        "category_choices": CATEGORY_CHOICES,
+        "brand_choices": BRAND_CHOICES,
     }
     return render(request, "manage_homes.html", context)
 
