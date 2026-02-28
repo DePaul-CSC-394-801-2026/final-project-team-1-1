@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-5">
+  <header class="border-b border-black pb-4">
+    <h1 class="text-2xl text-black">Manage Homes</h1>
+    <p class="text-md text-black">Update details or add another home.</p>
+  </header>
+    {#    Home Section#}
+  <section class="border rounded bg-[#dbf3fa] p-4 text-black space-y-4">
+      {#    Display current home and switch home section#}
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="border  rounded p-3 ">
+        <p class="text-sm text-black mb-2">Edit {{ home.name }}</p>
+        <form method="post" class="space-y-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update-home">
+          <input name="home_name" value="{{ home.name }}" class="w-full border px-2 py-1" required>
+          <input name="home_address" value="{{ home.address }}" placeholder="Address" class="w-full border px-2 py-1" required>
+          <div class="grid grid-cols-2 gap-2">
+            <input name="home_city" value="{{ home.city }}" placeholder="City" class="w-full border px-2 py-1" required>
+            <input name="home_state" value="{{ home.state }}" placeholder="State" class="w-full border px-2 py-1" required>
+          </div>
+          <input name="home_zip" value="{{ home.zip_code }}" placeholder="Zip Code" class="w-full border px-2 py-1" required>
+          <button type="submit" class="border px-3 py-1 bg-green-400">Save</button>
+        </form>
+      </div>
+
+      <div class="border rounded p-3 ">
+        <p class="text-sm text-black mb-2">Add another home</p>
+        <form method="post" class="space-y-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add-home">
+          <input name="home_name" placeholder="Home name" class="w-full border px-2 py-1" required>
+          <input name="home_address" placeholder="Address" class="w-full border px-2 py-1">
+          <div class="grid grid-cols-2 gap-2">
+            <input name="home_city" placeholder="City" class="w-full border px-2 py-1">
+            <input name="home_state" placeholder="State" class="w-full border px-2 py-1">
+          </div>
+          <input name="home_zip" placeholder="Zip Code" class="w-full border px-2 py-1">
+          <button type="submit" class="border px-3 py-1 bg-green-400">Add home</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

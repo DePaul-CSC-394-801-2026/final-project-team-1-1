@@ -150,55 +150,6 @@ def dashboard_view(request):
             else:
                 messages.error(request, "Room name is required.")
 
-        # Update home details
-        elif action == "update-home":
-            home_name = request.POST.get("home_name", "").strip()
-            home_address = request.POST.get("home_address", "").strip()
-            home_city = request.POST.get("home_city", "").strip()
-            home_state = request.POST.get("home_state", "").strip()
-            home_zip = request.POST.get("home_zip", "").strip()
-            if not home_name:
-                messages.error(request, "Home name is required.")
-            else:
-                # Validate home fields
-                errors = validate_home_fields(home_state, home_zip)
-                if errors:
-                    for message in errors:
-                        messages.error(request, message)
-                else:
-                    home.name = home_name
-                    home.address = home_address
-                    home.city = home_city
-                    home.state = home_state.upper()
-                    home.zip_code = home_zip
-                    home.save(update_fields=["name", "address", "city", "state", "zip_code"])
-                    messages.success(request, "Home updated.")
-        # Add new home per user + home
-        elif action == "add-home":
-            home_name = request.POST.get("home_name", "").strip()
-            home_address = request.POST.get("home_address", "").strip()
-            home_city = request.POST.get("home_city", "").strip()
-            home_state = request.POST.get("home_state", "").strip()
-            home_zip = request.POST.get("home_zip", "").strip()
-            if not home_name:
-                messages.error(request, "Home name is required.")
-            else:
-                errors = validate_home_fields(home_state, home_zip)
-                if errors:
-                    for message in errors:
-                        messages.error(request, message)
-                else:
-                    new_home = Home.objects.create(
-                        name=home_name,
-                        address=home_address,
-                        city=home_city,
-                        state=home_state.upper(),
-                        zip_code=home_zip,
-                    )
-                    HomeUserConnection.objects.create(user=user, home=new_home)
-                    request.session["home_id"] = str(new_home.home_id)
-                    messages.success(request, "Home added and set as current.")
-
         # Switching to a different home
         elif action == "switch-home":
             home_id = request.POST.get("home_id")
@@ -463,6 +414,77 @@ def dashboard_view(request):
         "brand_choices": BRAND_CHOICES,
     }
     return render(request, "dashboard.html", context)
+
+
+def manage_homes_view(request):
+    # Fetch the current session username
+    if not request.session.get("username"):
+        messages.error(request, "Please log in to continue.")
+        return redirect("login")
+
+    username = request.session["username"]
+    user = AppUser.objects.filter(username=username).first()
+    home = get_current_home(request, user)
+
+    #
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        # Update home details
+        if action == "update-home":
+            home_name = request.POST.get("home_name", "").strip()
+            home_address = request.POST.get("home_address", "").strip()
+            home_city = request.POST.get("home_city", "").strip()
+            home_state = request.POST.get("home_state", "").strip()
+            home_zip = request.POST.get("home_zip", "").strip()
+            if not home_name:
+                messages.error(request, "Home name is required.")
+            else:
+                errors = validate_home_fields(home_state, home_zip)
+                if errors:
+                    for message in errors:
+                        messages.error(request, message)
+                else:
+                    home.name = home_name
+                    home.address = home_address
+                    home.city = home_city
+                    home.state = home_state.upper()
+                    home.zip_code = home_zip
+                    home.save(update_fields=["name", "address", "city", "state", "zip_code"])
+                    messages.success(request, "Home updated.")
+        # Add new home per user + home
+        elif action == "add-home":
+            home_name = request.POST.get("home_name", "").strip()
+            home_address = request.POST.get("home_address", "").strip()
+            home_city = request.POST.get("home_city", "").strip()
+            home_state = request.POST.get("home_state", "").strip()
+            home_zip = request.POST.get("home_zip", "").strip()
+            if not home_name:
+                messages.error(request, "Home name is required.")
+            else:
+                errors = validate_home_fields(home_state, home_zip)
+                if errors:
+                    for message in errors:
+                        messages.error(request, message)
+                else:
+                    new_home = Home.objects.create(
+                        name=home_name,
+                        address=home_address,
+                        city=home_city,
+                        state=home_state.upper(),
+                        zip_code=home_zip,
+                    )
+                    HomeUserConnection.objects.create(user=user, home=new_home)
+                    request.session["home_id"] = str(new_home.home_id)
+                    messages.success(request, "Home added and set as current.")
+
+        return redirect("manage_homes")
+
+    context = {
+        "home": home,
+        "homes": user.homes.all(),
+    }
+    return render(request, "manage_homes.html", context)
 
 
 def logout_view(request):

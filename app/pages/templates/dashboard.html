@@ -6,69 +6,6 @@
     <p class="text-md text-black">Welcome, {{ request.session.username }}.</p>
   </header>
 
-{#    Home Section#}
-  <section class="border rounded bg-[#dbf3fa] p-4 text-black space-y-3">
-{#    Display current home and switch home section#}
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="text-sm font-medium text-black">Current home</p>
-        <p class="text-lg text-black">{{ home.name }}</p>
-        {% if home.address or home.city or home.state or home.zip_code %}
-          <p class="text-xs text-black">
-            {{ home.address }}
-            {% if home.city %}<br/>{{ home.city }}{% endif %}
-            {% if home.state %}, {{ home.state }}{% endif %}
-            {% if home.zip_code %} {{ home.zip_code }}{% endif %}
-          </p>
-        {% endif %}
-      </div>
-      <form method="post" class="text-sm">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="switch-home">
-        <select name="home_id" class="border px-2 py-1">
-          {% for item in homes %}
-            <option value="{{ item.home_id }}" {% if item.home_id == home.home_id %}selected{% endif %}>
-              {{ item.name }}
-            </option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="border px-3 py-1 bg-green-400">Switch</button>
-      </form>
-    </div>
-
-    {#    Add/edit Home Section#}
-    <div class="grid gap-4 md:grid-cols-2">
-      <form method="post" class="space-y-2">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="update-home">
-        <p class="text-sm text-black">Edit home</p>
-        <input name="home_name" value="{{ home.name }}" class="w-full border px-2 py-1" required>
-{#          Address section. To eventually be used by map api#}
-        <input name="home_address" value="{{ home.address }}" placeholder="Address" class="w-full border px-2 py-1" required>
-        <div class="grid grid-cols-2 gap-2">
-          <input name="home_city" value="{{ home.city }}" placeholder="City" class="w-full border px-2 py-1" required>
-          <input name="home_state" value="{{ home.state }}" placeholder="State" class="w-full border px-2 py-1" required>
-        </div>
-        <input name="home_zip" value="{{ home.zip_code }}" placeholder="Zip Code" class="w-full border px-2 py-1" required>
-        <button type="submit" class="border px-3 py-1 bg-green-400">Save</button>
-      </form>
-
-      <form method="post" class="space-y-2">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="add-home">
-        <p class="text-sm text-black">Add another home</p>
-        <input name="home_name" placeholder="Home name" class="w-full border px-2 py-1" required>
-        <input name="home_address" placeholder="Address" class="w-full border px-2 py-1">
-        <div class="grid grid-cols-2 gap-2">
-          <input name="home_city" placeholder="City" class="w-full border px-2 py-1">
-          <input name="home_state" placeholder="State" class="w-full border px-2 py-1">
-        </div>
-        <input name="home_zip" placeholder="Zip Code" class="w-full border px-2 py-1">
-        <button type="submit" class="border px-3 py-1 bg-green-400">Add home</button>
-      </form>
-    </div>
-  </section>
-
     {#Global stats#}
   <section class="grid grid-cols-3 gap-4">
     <div class="border rounded p-3 bg-[#dbf3fa] text-black">
