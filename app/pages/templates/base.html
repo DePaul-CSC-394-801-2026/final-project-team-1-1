@@ -14,6 +14,7 @@
             {#SHow user name when logged in, else the login/register buttons#}
           {% if request.session.username %}
             <a href="/pages/dashboard/" class="px-3 py-1 underline text-white">Dashboard</a>
+            <a href="/pages/manage-homes/" class="px-3 py-1 underline text-white">Manage Homes</a>
             <span class="text-white">{{ request.session.username }}</span>
             <a href="/pages/logout/" class="px-3 py-1 border border-gray-400 text-white">Logout</a>
           {% else %}
@@ -22,6 +23,39 @@
           {% endif %}
         </div>
       </div>
+    <div>
+        {% if request.session.username and home %}
+            <div class="w-full px-6 pb-4">
+                <div class="flex flex-wrap items-center justify-between gap-4 text-white">
+                    <div>
+                        <p class="text-xs uppercase tracking-wide">Current home</p>
+                        <p class="text-lg font-medium">{{ home.name }}</p>
+                        {% if home.address or home.city or home.state or home.zip_code %}
+                            <p class="text-xs">
+                                {{ home.address }}
+                                {% if home.city %}<br/>{{ home.city }}{% endif %}
+                                {% if home.state %}, {{ home.state }}{% endif %}
+                                {% if home.zip_code %} {{ home.zip_code }}{% endif %}
+                            </p>
+                        {% endif %}
+                    </div>
+                    <form method="post" action="{% url 'dashboard' %}" class="flex items-center gap-2 text-sm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="switch-home">
+                        <select name="home_id" class="border px-2 py-1 text-white">
+                            {% for item in homes %}
+                                <option value="{{ item.home_id }}" {% if item.home_id == home.home_id %}selected{% endif %}>
+                                    {{ item.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="border px-3 py-1 bg-green-400 text-black">Switch</button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
     </header>
 
     {#Show login/logout messages#}
